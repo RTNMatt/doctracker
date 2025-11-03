@@ -95,52 +95,34 @@ def health(request):
 @api_view(["GET"])
 def tiles(request):
     """
-    Server-driven home tiles. Compose this from DB/config as needed.
-    Example payload includes:
-    - One known collection (if present)
-    - A few departments
-    - A few recent published documents
-    - One or more external links
+    Return active tiles in configured order.
     """
+    from .models import Tile
+    tiles = Tile.objects.filter(is_active=True).order_by("order", "id")
+
     payload = []
+    for t in tiles:
+        base = {
+            "id": t.id,
+            "title": t.title,
+            "kind": t.kind,
+            "description": t.description or "",
+        }
+        if t.icon:
+            base["icon"] = t.icon
 
-    # Example: known collection
-    col = Collection.objects.filter(slug="new-hire-onboarding").first()
-    if col:
-        payload.append({
-            "id": f"col-{col.id}",
-            "title": col.name,
-            "kind": "collection",
-            "collectionSlug": col.slug,
-            "description": (col.description or "")[:120],
-        })
+        if t.kind == "external" and t.href:
+            base["href"] = t.href
+        elif t.kind == "document" and t.document_id:
+            base["documentId"] = t.document_id
+        elif t.kind == "department" and t.department_id:
+            base["departmentSlug"] = t.department.slug
+        elif t.kind == "collection" and t.collection_id:
+            base["collectionSlug"] = t.collection.slug
+        else:
+            # skip misconfigured tile
+            continue
 
-    # Example: a few departments
-    for dept in Department.objects.all()[:3]:
-        payload.append({
-            "id": f"dept-{dept.id}",
-            "title": dept.name,
-            "kind": "department",
-            "departmentSlug": dept.slug,
-        })
-
-    # Example: recent published documents
-    recent_docs = Document.objects.filter(status="published").order_by("-updated_at")[:3]
-    for d in recent_docs:
-        payload.append({
-            "id": f"doc-{d.id}",
-            "title": d.title,
-            "kind": "document",
-            "documentId": d.id,
-        })
-
-    # Example: external link
-    payload.append({
-        "id": "ext-1",
-        "title": "Company Portal",
-        "kind": "external",
-        "href": "https://intranet.example.com/portal",
-        "description": "HR, benefits, forms",
-    })
+        payload.append(base)
 
     return Response(payload)

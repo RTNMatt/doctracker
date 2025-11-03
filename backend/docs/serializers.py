@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection,
+    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection, Tile,
     assemble_requirements_from_tags
 )
 
@@ -67,3 +67,12 @@ class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ["id", "name", "slug", "description", "documents", "order"]
+
+class TileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tile
+        fields = [
+            "id", "title", "kind",
+            "href", "document", "department", "collection",
+            "description", "icon", "order", "is_active",
+        ]

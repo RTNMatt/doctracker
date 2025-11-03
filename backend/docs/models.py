@@ -177,6 +177,54 @@ class Collection(models.Model):
         return self.name
 
 
+
+class Tile(models.Model):
+    KIND_CHOICES = [
+        ("external", "External Link"),
+        ("document", "Single Document"),
+        ("department", "Department"),
+        ("collection", "Collection"),
+    ]
+
+    title = models.CharField(max_length=160)
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+
+    # targets (only one should be set depending on kind)
+    href = models.URLField(blank=True)  # external
+    document = models.ForeignKey(Document, null=True, blank=True, on_delete=models.SET_NULL, related_name="tiles")
+    department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.SET_NULL, related_name="tiles")
+    collection = models.ForeignKey(Collection, null=True, blank=True, on_delete=models.SET_NULL, related_name="tiles")
+
+    description = models.TextField(blank=True)
+    icon = models.URLField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def clean(self):
+        # Enforce exactly one target matches the kind
+        target_count = 0
+        if self.kind == "external":
+            target_count += 1 if self.href else 0
+        if self.kind == "document":
+            target_count += 1 if self.document_id else 0
+        if self.kind == "department":
+            target_count += 1 if self.department_id else 0
+        if self.kind == "collection":
+            target_count += 1 if self.collection_id else 0
+        if target_count != 1:
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Exactly one target must be set matching the tile kind.")
+
+    def __str__(self):
+        return f"{self.title} [{self.kind}]"
+
+
+
+
+
 # ---------- Helper for 'rendered requirements' ----------
 def assemble_requirements_from_tags(doc: Document):
     """
@@ -202,3 +250,6 @@ def assemble_requirements_from_tags(doc: Document):
             items.append(entry)
     # Already ordered by snippet.priority
     return items
+
+
+

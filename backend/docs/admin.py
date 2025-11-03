@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection
+    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection, Tile,
 )
 
 @admin.register(Department)
@@ -56,3 +56,10 @@ class CollectionAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "order")
     search_fields = ("name", "slug")
     filter_horizontal = ("documents",)
+
+@admin.register(Tile)
+class TileAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "order", "is_active")
+    list_filter = ("kind", "is_active")
+    search_fields = ("title", "description", "href")
+    autocomplete_fields = ("document", "department", "collection")
