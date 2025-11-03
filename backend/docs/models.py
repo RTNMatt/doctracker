@@ -155,6 +155,28 @@ class RequirementSnippet(models.Model):
         return f"[{self.tag.name}] {self.title}"
 
 
+class Collection(models.Model):
+    """
+    Curated sets of documents (e.g., 'New Hire Onboarding').
+    """
+    name = models.CharField(max_length=160, unique=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    documents = models.ManyToManyField(Document, blank=True, related_name="collections")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "name"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 # ---------- Helper for 'rendered requirements' ----------
 def assemble_requirements_from_tags(doc: Document):
     """

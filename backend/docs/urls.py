@@ -1,13 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
 from .views import (
     DepartmentViewSet, TemplateViewSet, TagViewSet,
     RequirementSnippetViewSet, DocumentViewSet,
-    SectionViewSet, ResourceLinkViewSet
+    SectionViewSet, ResourceLinkViewSet,
+    CollectionViewSet, tiles, health
 )
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
 router = DefaultRouter()
 router.register(r"departments", DepartmentViewSet)
@@ -17,12 +15,10 @@ router.register(r"snippets", RequirementSnippetViewSet)
 router.register(r"documents", DocumentViewSet)
 router.register(r"sections", SectionViewSet)
 router.register(r"links", ResourceLinkViewSet)
-
-@api_view(["GET"])
-def health(request):
-    return Response({"status": "ok", "service": "DocTracker API"})
+router.register(r"collections", CollectionViewSet, basename="collections")
 
 urlpatterns = [
     path("health/", health, name="health"),
+    path("tiles/", tiles, name="tiles"),
     path("", include(router.urls)),
 ]

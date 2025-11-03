@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet,
+    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection,
     assemble_requirements_from_tags
 )
 
@@ -62,3 +62,8 @@ class RenderedRequirementsSerializer(serializers.ModelSerializer):
 
     def get_requirements(self, obj):
         return assemble_requirements_from_tags(obj)
+
+class CollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ["id", "name", "slug", "description", "documents", "order"]

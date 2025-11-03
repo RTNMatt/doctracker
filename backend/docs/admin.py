@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet
+    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection
 )
 
 @admin.register(Department)
@@ -50,3 +50,9 @@ class RequirementSnippetAdmin(admin.ModelAdmin):
     list_filter = ("active", "tag")
     search_fields = ("title", "content_md")
     autocomplete_fields = ("tag",)
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "order")
+    search_fields = ("name", "slug")
+    filter_horizontal = ("documents",)
