@@ -1,0 +1,43 @@
+
+
+.doc-links {
+    list-style-type: none;
+}
+
+.doc-links a {
+    text-decoration: none;
+    font-style: italic;
+}
+
+.doc-contents {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    max-width: 90%;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.doc-right {
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    min-height: 280px;
+}
+
+.doc-left {
+    min-width: 0;
+}
+
+.doc-sec-img {
+    max-width: 100%;
+    max-height: 50%;
+    height: auto;
+    object-fit: contain;
+}
+
+@media (max-width: 800px){
+    .doc-contents {
+        grid-template-columns: 1fr;
+    }
+}

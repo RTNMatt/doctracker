@@ -82,6 +82,7 @@ class Section(models.Model):
     order = models.PositiveIntegerField(default=0)
     header = models.CharField(max_length=160)
     body_md = models.TextField(blank=True, help_text="Markdown content")
+    image = models.ImageField(upload_to="sections/", blank=True, null=True)
 
     class Meta:
         ordering = ["order", "id"]

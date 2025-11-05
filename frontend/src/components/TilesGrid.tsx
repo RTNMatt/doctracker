@@ -1,5 +1,6 @@
 import type { Tile } from "../lib/types";
 import TileCard from "./TileCard";
+import './TilesGrid.css'
 
 export default function TilesGrid({
     tiles,

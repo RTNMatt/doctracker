@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import './DocumentPage.css';
 
 export default function DocumentPage() {
   const { id } = useParams();
@@ -27,17 +28,11 @@ export default function DocumentPage() {
 
   return (
     <>
-        <h1>{doc.title}</h1>
-        {doc.sections?.map((s: any) => (
-            <section key={s.id} style={{marginBlock: 16}}>
-                <h3>{s.header}</h3>
-                <pre style={{whiteSpace: "pre-wrap"}}>{s.body_md}</pre>
-            </section>
-        ))}
+        <h1 className="doc-title">{doc.title}</h1>
         {!!doc.links?.length && (
             <>
-              <h3>Links</h3>
-              <ul>
+              <h3>Relevant Links</h3>
+              <ul className="doc-links">
                   {doc.links.map((l:any) => (
                       <li key={l.id}>
                           <a href={l.url} target="_blank" rel="noreferrer">{l.title}</a>
@@ -47,6 +42,21 @@ export default function DocumentPage() {
               </ul>
             </>
         )}
+        {doc.sections?.map((s: any) => (
+            <section className="doc-contents" key={s.id} style={{marginBlock: 16}}>
+                <div className="doc-left">
+                  <h3>{s.header}</h3>
+                  <pre style={{whiteSpace: "pre-wrap"}}>{s.body_md}</pre>
+                </div>
+                <div className="doc-right">
+                  {s.image ? (
+                    <div style={{margin: "8px 0"}}>
+                      <img className="doc-sec-img" src={s.image} alt={s.header || "section image"} />
+                    </div>
+                  ) : null}
+                </div>
+            </section>
+        ))}
     </>
   );
 }

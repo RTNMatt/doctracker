@@ -18,7 +18,7 @@ class TemplateAdmin(admin.ModelAdmin):
 class SectionInline(admin.TabularInline):
     model = Section
     extra = 1
-    fields = ("order", "header", "body_md")
+    fields = ("order", "header", "body_md", "image")
 
 
 class ResourceLinkInline(admin.TabularInline):

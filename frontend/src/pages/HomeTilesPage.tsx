@@ -53,7 +53,7 @@ export default function HomeTilesPage() {
 
     return (
         <>
-        <h1 className="doc-title">DocTracker Home Page</h1>
+        <h1 className="home-title">DocTracker Home Page</h1>
         <TilesGrid tiles={tiles} onClickTile={handleTileClick} />
         </>
     );

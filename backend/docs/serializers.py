@@ -25,9 +25,10 @@ class RequirementSnippetSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class SectionSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False, allow_null=True)
     class Meta:
         model = Section
-        fields = ["id", "order", "header", "body_md", "document"]
+        fields = ["id", "order", "header", "body_md", "image", "document"]
 
 class ResourceLinkSerializer(serializers.ModelSerializer):
     class Meta:
