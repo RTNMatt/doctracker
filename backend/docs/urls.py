@@ -4,7 +4,7 @@ from .views import (
     DepartmentViewSet, TemplateViewSet, TagViewSet,
     RequirementSnippetViewSet, DocumentViewSet,
     SectionViewSet, ResourceLinkViewSet,
-    CollectionViewSet, tiles, health
+    CollectionViewSet, tiles, health, search
 )
 
 router = DefaultRouter()
@@ -20,5 +20,6 @@ router.register(r"collections", CollectionViewSet, basename="collections")
 urlpatterns = [
     path("health/", health, name="health"),
     path("tiles/", tiles, name="tiles"),
+    path("search/", search, name="search"),
     path("", include(router.urls)),
 ]

@@ -11,3 +11,12 @@
     border-right: 1px solid #e5e7eb;
     overflow: auto;
 }
+
+.sidebar-search { margin-bottom: 12px; }
+.sidebar-search input[type="search"] {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+}
+.sidebar-search input::placeholder { opacity: 0.75; }

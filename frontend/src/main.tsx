@@ -8,6 +8,7 @@ import DepartmentPage from "./pages/DepartmentPage.tsx";
 import CollectionPage from "./pages/CollectionsPage.tsx";
 import DocumentsList from "./pages/DocumentsList";
 import DocumentRequirements from "./pages/DocumentRequirements";
+import SearchResultsPage from "./pages/SearchResultsPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -15,10 +16,11 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
         {index: true, element: <HomeTilesPage />},
+        {path: "search", element: <SearchResultsPage />},
         {path: "documents", element: <DocumentsList />},
         {path: "documents/:id", element: <DocumentPage />},
         {path: "documents/:id/requirements", element: <DocumentRequirements />},
-        {path: "departments/:id", element: <DepartmentPage />},
+        {path: "departments/:slug", element: <DepartmentPage />},
         {path: "collections/:slug", element: <CollectionPage />},
       ],
   },
