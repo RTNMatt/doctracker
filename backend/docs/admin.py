@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from .models import (
     Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection, Tile,
 )
@@ -51,11 +52,6 @@ class RequirementSnippetAdmin(admin.ModelAdmin):
     search_fields = ("title", "content_md")
     autocomplete_fields = ("tag",)
 
-@admin.register(Collection)
-class CollectionAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "order")
-    search_fields = ("name", "slug")
-    filter_horizontal = ("documents","subcollections")
 
 @admin.register(Tile)
 class TileAdmin(admin.ModelAdmin):
@@ -63,3 +59,48 @@ class TileAdmin(admin.ModelAdmin):
     list_filter = ("kind", "is_active")
     search_fields = ("title", "description", "href")
     autocomplete_fields = ("document", "department", "collection")
+
+class CollectionAdminForm(forms.ModelForm):
+    class Meta:
+        model = Collection
+        fields = "__all__"
+
+    def clean_subcollections(self):
+        subs = self.cleaned_data.get("subcollections")
+        instance = self.instance
+
+        # Self-nesting
+        if instance.pk and subs.filter(pk=instance.pk).exists():
+            raise forms.ValidationError("A collection cannot include itself.")
+
+        # Cycle detection: child -> ... -> instance
+        if instance.pk:
+            target_pk = instance.pk
+
+            def has_path_to_target(start):
+                seen = set()
+                stack = [start]
+                while stack:
+                    node = stack.pop()
+                    if node.pk == target_pk:
+                        return True
+                    if node.pk in seen:
+                        continue
+                    seen.add(node.pk)
+                    stack.extend(node.subcollections.all())
+                return False
+
+            for child in subs.all():
+                if has_path_to_target(child):
+                    raise forms.ValidationError(
+                        f"Adding '{child.name}' would create a circular collection chain."
+                    )
+
+        return subs
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    form = CollectionAdminForm
+    list_display = ("name", "slug", "order")
+    search_fields = ("name", "slug")
+    filter_horizontal = ("documents", "subcollections")

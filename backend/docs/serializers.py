@@ -68,6 +68,36 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = ["id", "name", "slug", "description", "documents", "subcollections","order"]
 
+        def validate_subcollections(self, subs):
+            """
+            Validates on create/update via API:
+            - no self-nesting
+            - no cycles
+            """
+            instance = getattr(self, "instance", None)
+
+            if instance and instance.pk and subs.filter(pk=instance.pk).exists():
+                raise serializers.ValidationError("A collection cannot include itself.")
+
+            def would_create_cycle(parent_pk, child: Collection) -> bool:
+                seen = set()
+                stack = [child]
+                while stack:
+                    node = stack.pop()
+                    if node.pk == parent_pk:
+                        return True
+                    if node.pk in seen:
+                        continue
+                    seen.add(node.pk)
+                    stack.extend(node.subcollections.all())
+                return False
+            if instance and instance.pk:
+                for child in subs:
+                    if would_create_cycle(instance.pk, child):
+                        raise serializers.ValidationError(f"Adding '{child.name}' would create a circular collection chain.")
+
+            return subs
+
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tile
