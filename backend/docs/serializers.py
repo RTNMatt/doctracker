@@ -36,7 +36,6 @@ class ResourceLinkSerializer(serializers.ModelSerializer):
         fields = ["id", "order", "title", "url", "note", "document"]
 
 class DocumentSerializer(serializers.ModelSerializer):
-    # Readable related data
     sections = SectionSerializer(many=True, read_only=True)
     links = ResourceLinkSerializer(many=True, read_only=True)
 
@@ -67,7 +66,7 @@ class RenderedRequirementsSerializer(serializers.ModelSerializer):
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["id", "name", "slug", "description", "documents", "order"]
+        fields = ["id", "name", "slug", "description", "documents", "subcollections","order"]
 
 class TileSerializer(serializers.ModelSerializer):
     class Meta:

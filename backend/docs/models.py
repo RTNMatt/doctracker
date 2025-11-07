@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class Department(models.Model):
@@ -164,6 +165,7 @@ class Collection(models.Model):
     slug = models.SlugField(max_length=200, unique=True, blank=True)
     description = models.TextField(blank=True)
     documents = models.ManyToManyField(Document, blank=True, related_name="collections")
+    subcollections = models.ManyToManyField("self", blank=True, symmetrical=False, related_name="parent_collection")
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -176,6 +178,9 @@ class Collection(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
 
 
 

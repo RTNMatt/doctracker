@@ -10,8 +10,6 @@ from .serializers import (
     DepartmentSerializer, TemplateSerializer, DocumentSerializer,
     SectionSerializer, ResourceLinkSerializer, TagSerializer,
     RequirementSnippetSerializer, RenderedRequirementsSerializer,
-    # new
-    # You'll need to add CollectionSerializer to serializers.py as shown earlier.
     CollectionSerializer
 )
 
@@ -19,9 +17,10 @@ from .serializers import (
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
+    lookup_field = "slug"
 
     @action(detail=True, methods=["get"], url_path="documents", url_name="documents")
-    def documents(self, request, pk=None):
+    def documents(self, request, *args, **kwargs):
         """
         List documents that belong to this department.
         """
@@ -75,15 +74,25 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Curated groupings of documents (e.g., 'New Hire Onboarding').
     """
-    queryset = Collection.objects.all().prefetch_related("documents")
+    queryset = Collection.objects.all().prefetch_related("documents", "subcollections")
     serializer_class = CollectionSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "slug"     # <-- make URL kwarg explicit
 
     @action(detail=True, methods=["get"])
-    def documents(self, request, pk=None):
+    def documents(self, request, *args, **kwargs):  # <-- keep *args, **kwargs
         col = self.get_object()
         docs = col.documents.all().prefetch_related("tags", "sections", "links", "departments")
         page = self.paginate_queryset(docs)
         ser = DocumentSerializer(page or docs, many=True)
+        return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
+
+    @action(detail=True, methods=["get"])
+    def subcollections(self, request, *args, **kwargs):  # <-- keep *args, **kwargs
+        col = self.get_object()
+        subs = col.subcollections.all()
+        page = self.paginate_queryset(subs)
+        ser = CollectionSerializer(page or subs, many=True)
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
 
 

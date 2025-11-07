@@ -55,7 +55,7 @@ class RequirementSnippetAdmin(admin.ModelAdmin):
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "order")
     search_fields = ("name", "slug")
-    filter_horizontal = ("documents",)
+    filter_horizontal = ("documents","subcollections")
 
 @admin.register(Tile)
 class TileAdmin(admin.ModelAdmin):
