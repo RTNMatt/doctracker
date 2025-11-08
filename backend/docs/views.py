@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django.db.models import Q
+from .services.tags import sync_structural_tags, ensure_department_tag
 
 from .models import (
     Department, Template, Document, Section, ResourceLink, Tag,
@@ -19,6 +20,14 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     lookup_field = "slug"
+
+    def perform_create(self, serializer):
+        dept = serializer.save()
+        ensure_department_tag(dept)
+
+    def perform_update(self, serializer):
+        dept = serializer.save()
+        ensure_department_tag(dept)
 
     @action(detail=True, methods=["get"], url_path="documents", url_name="documents")
     def documents(self, request, *args, **kwargs):
@@ -50,6 +59,15 @@ class RequirementSnippetViewSet(viewsets.ModelViewSet):
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all().prefetch_related("tags", "sections", "links", "departments")
     serializer_class = DocumentSerializer
+
+    def perform_create(self, serializer):
+        doc = serializer.save()
+        # departments/collections must be included in payload to be set here
+        sync_structural_tags(doc)
+
+    def perform_update(self, serializer):
+        doc = serializer.save()
+        sync_structural_tags(doc)
 
     @action(detail=True, methods=["get"])
     def requirements(self, request, pk=None):

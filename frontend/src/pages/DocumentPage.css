@@ -138,3 +138,63 @@
 .doc-right:empty {
   display: none;
 }
+
+/* --- Tag bar (minimal additions) --- */
+.doc-tagbar {
+  display: grid;
+  gap: 8px 14px;
+  grid-template-columns: 1fr;
+  margin: 6px 0 10px;
+}
+
+.tag-group {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.tag-group-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: right;
+  padding-right: 6px;
+}
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  border: 1px solid var(--hairline);
+  background: #fff;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.tag-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(47,106,253,0.12); }
+.tag-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Group colors */
+:root {
+  --tag-dept-bg: #EAF2FF;  --tag-dept-fg: #1F2A44;  --tag-dept-ol: #C8DAFF;
+  --tag-col-bg:  #E8FFF5;  --tag-col-fg:  #055941;  --tag-col-ol:  #CDEEE3;
+  --tag-doc-bg:  #FFF5E6;  --tag-doc-fg:  #7A4A00;  --tag-doc-ol:  #FFE3B3;
+  --tag-ext-bg:  #F3E8FF;  --tag-ext-fg:  #3B1E7A;  --tag-ext-ol:  #E2D3FF;
+}
+
+/* outlines now match each tag's palette */
+.tag-chip.is-dept { background: var(--tag-dept-bg); color: var(--tag-dept-fg); border-color: transparent; outline: 2px solid var(--tag-dept-ol); }
+.tag-chip.is-col  { background: var(--tag-col-bg);  color: var(--tag-col-fg);  border-color: transparent; outline: 2px solid var(--tag-col-ol); }
+.tag-chip.is-doc  { background: var(--tag-doc-bg);  color: var(--tag-doc-fg);  border-color: transparent; outline: 2px solid var(--tag-doc-ol); }
+.tag-chip.is-ext  { background: var(--tag-ext-bg);  color: var(--tag-ext-fg);  border-color: transparent; outline: 2px solid var(--tag-ext-ol); }
+
+/* Responsive */
+@media (max-width: 800px) {
+  .tag-group { grid-template-columns: 1fr; }
+  .tag-group-label { text-align: left; }
+}

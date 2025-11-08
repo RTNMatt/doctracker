@@ -15,9 +15,39 @@ class TemplateSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class TagSerializer(serializers.ModelSerializer):
+    target_kind = serializers.SerializerMethodField()
+    target_value = serializers.SerializerMethodField()  # slug/id/url for routing
+
     class Meta:
         model = Tag
-        fields = "__all__"
+        fields = [
+            "id", "name", "slug", "description",
+            "link_department", "link_collection", "link_document", "link_url",
+            "target_kind", "target_value"
+        ]
+
+    def get_target_kind(self, obj):
+        if obj.link_department_id:
+            return "department"
+        if obj.link_collection_id:
+            return "collection"
+        if obj.link_document_id:
+            return "document"
+        if obj.link_url:
+            return "external"
+        return "none"
+
+    def get_target_value(self, obj):
+        # normalize what the frontend needs to open
+        if obj.link_department_id:
+            return {"slug": obj.link_department.slug}
+        if obj.link_collection_id:
+            return {"slug": obj.link_collection.slug}
+        if obj.link_document_id:
+            return {"id": obj.link_document_id}
+        if obj.link_url:
+            return {"url": obj.link_url}
+        return {}
 
 class RequirementSnippetSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,6 +68,7 @@ class ResourceLinkSerializer(serializers.ModelSerializer):
 class DocumentSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
     links = ResourceLinkSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True) 
 
     class Meta:
         model = Document

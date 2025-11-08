@@ -118,9 +118,15 @@ class Tag(models.Model):
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     description = models.TextField(blank=True)
 
-    # Auto-link targets (optional)
-    link_document = models.ForeignKey("Document", null=True, blank=True, on_delete=models.SET_NULL, related_name="linked_by_tags")
+    # NEW: internal link targets
+    link_department = models.ForeignKey("Department", null=True, blank=True,
+                                        on_delete=models.SET_NULL, related_name="linked_by_tags")
+    link_collection = models.ForeignKey("Collection", null=True, blank=True,
+                                        on_delete=models.SET_NULL, related_name="linked_by_tags")
+    link_document  = models.ForeignKey("Document",   null=True, blank=True,
+                                        on_delete=models.SET_NULL, related_name="linked_by_tags")
     link_url = models.URLField(blank=True)
+    # slugify in save() stays the same
 
     def save(self, *args, **kwargs):
         if not self.slug:
