@@ -1,43 +1,140 @@
+/* =========================
+   Document Page Styles
+   (keeps your class names)
+   ========================= */
 
+.document-page {
+  color: var(--text);
+}
 
+/* Optional header structure if present */
+.document-header {
+  max-width: 1280px;          /* widened a bit */
+  margin: 0 auto 20px;
+  padding: 0 16px;
+}
+.document-title {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 3.6vw, 32px);
+  line-height: 1.2;
+  color: var(--text);
+}
+.document-meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* -------- Links block -------- */
 .doc-links {
-    list-style-type: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
 }
-
 .doc-links a {
-    text-decoration: none;
-    font-style: italic;
+  text-decoration: none;
+  font-style: italic;
+  color: var(--brand);
+}
+.doc-links a:hover {
+  text-decoration: underline;
 }
 
+/* -------- Two-column content -------- */
 .doc-contents {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    max-width: 90%;
-    margin: 0 auto;
-    padding: 0 16px;
+  display: grid;
+  /* widen overall and give left column a touch more space */
+  grid-template-columns: 1.25fr 0.95fr;
+  gap: 30px;
+
+  max-width: 1280px;          /* widened from 1200px */
+  margin: 0 auto;             /* centered */
+  padding: 0 20px;            /* slightly wider side gutters */
 }
 
-.doc-right {
-    min-width: 0;
-    display: grid;
-    place-items: center;
-    min-height: 280px;
-}
-
+/* Left column (body/sections) */
 .doc-left {
-    min-width: 0;
+  min-width: 0;               /* prevent overflow */
 }
 
+/* Right column (image/preview/panel) — NO BOX STYLE */
+.doc-right {
+  min-width: 0;
+  min-height: 0;              /* no forced height if empty */
+  display: grid;
+  place-items: center;        /* centers content if present */
+  /* removed background/border/padding so there’s no box when empty */
+}
+
+/* -------- Section content -------- */
+.doc-section {
+  margin: 0 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+.doc-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.doc-section-title {
+  margin: 0 0 8px;
+  font-size: clamp(16px, 2.2vw, 20px);
+  font-weight: 600;
+  color: var(--text);
+}
+.doc-section-body {
+  color: var(--text);
+  line-height: 1.6;
+}
+.doc-section-body p { margin: 0 0 10px; }
+.doc-section-body ul,
+.doc-section-body ol { margin: 0 0 10px 18px; }
+
+/* -------- Section images (NO BORDER/BOX) -------- */
 .doc-sec-img {
-    max-width: 100%;
-    max-height: 50%;
-    height: auto;
-    object-fit: contain;
+  max-width: 100%;
+  max-height: 50%;
+  height: auto;
+  object-fit: contain;
+  /* removed border/background/radius to eliminate the box look */
+  display: block;
+  border-radius: 8px;
 }
 
-@media (max-width: 800px){
-    .doc-contents {
-        grid-template-columns: 1fr;
-    }
+/* -------- Small helpers -------- */
+.doc-hint {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* -------- Responsive -------- */
+@media (max-width: 1000px) {
+  .doc-contents {
+    gap: 22px;
+    max-width: 95%;
+    grid-template-columns: 1.1fr 0.9fr; /* keep a little bias to the left */
+  }
+}
+
+@media (max-width: 800px) {
+  .doc-contents {
+    grid-template-columns: 1fr;   /* stack on small screens */
+    max-width: 100%;
+    gap: 18px;
+  }
+  .doc-right {
+    min-height: 0;                /* ensure no empty box on mobile either */
+  }
+}
+
+/* If the right column is empty, collapse to a single centered column */
+.doc-contents:has(.doc-right:empty) {
+  grid-template-columns: 1fr;
+  max-width: 900px;   /* nice reading width */
+}
+
+/* Don’t render an empty right column */
+.doc-right:empty {
+  display: none;
 }

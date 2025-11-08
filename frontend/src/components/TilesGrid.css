@@ -1,24 +1,27 @@
 .tiles {
-    list-style: none;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
-    gap: 16px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 
-    max-width: 1100px;
-    padding: 0 16px;
+  max-width: 1100px;
+  padding: 0 16px;
 }
 
+/* Card container */
 .tile {
-    border: 1px solid #222;
-    border-radius: 8px;
-    padding: 16px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 16px;
 
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
 }
 
-
+/* Clickable content */
 .tile-link {
   appearance: none;
   background: transparent;
@@ -28,7 +31,6 @@
   text-align: left;
   cursor: pointer;
 
-
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -37,20 +39,20 @@
   padding: 0;
 }
 
-
+/* Hover / active */
 .tile:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  border-color: var(--brand);
+  box-shadow: 0 6px 16px rgba(59,130,246,0.18);
   transform: translateY(-2px);
-  border-color: #334155;
 }
 .tile:active { transform: translateY(0); }
 
 .tile-link:focus-visible {
-  outline: 2px solid var(--accent, #2dd4bf);
+  outline: 2px solid var(--brand);
   outline-offset: 4px;
 }
 
-
+/* Icon + text */
 .tile-icon {
   flex: 0 0 40px;
   width: 40px;
@@ -66,6 +68,7 @@
   font-weight: 600;
   font-size: clamp(16px, 1.5vw, 18px);
   line-height: 1.2;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -73,7 +76,7 @@
 
 .tile-desc {
   margin: 0;
-  color: #9aa4b2;
+  color: var(--muted);
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -84,11 +87,23 @@
 
 .collection-desc {
   margin: 8px 0 16px;
-  opacity: 0.9;
+  color: var(--muted);
   line-height: 1.6;
 }
 
+/* Center tiles on the Search page just like Home/Collections */
+.search-page .tiles {
+  max-width: 1200px;
+  margin: 16px auto 64px;  /* centers the whole grid block */
+  padding: 0 16px;
+}
+
+.search-page .page-title {
+  text-align: center;
+  margin-bottom: 12px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .tile { transform: none !important; box-shadow: none !important; }
 }
+

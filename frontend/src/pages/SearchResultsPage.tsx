@@ -40,8 +40,8 @@ export default function SearchResultsPage() {
   const { docTiles, colTiles, deptItems, tagItems } = useMemo(() => {
   const docs: Tile[] = [];
   const cols: Tile[] = [];
-  const deps: DeptItem[] = [];   // <— specific type
-  const tags: TagItem[] = [];    // <— specific type
+  const deps: DeptItem[] = [];
+  const tags: TagItem[] = [];
 
   for (const r of results as SearchItem[]) {
     if (r.kind === "document") {
@@ -84,7 +84,7 @@ export default function SearchResultsPage() {
   if (err) return <div style={{ padding: 24, color: "red" }}>{err}</div>;
 
   return (
-    <div style={{ padding: 24 }}>
+    <section className="search-page">
       <h2>Search results for “{q}”</h2>
 
       {colTiles.length > 0 && (
@@ -132,6 +132,6 @@ export default function SearchResultsPage() {
       {colTiles.length === 0 && docTiles.length === 0 && deptItems.length === 0 && tagItems.length === 0 && (
         <p>No results.</p>
       )}
-    </div>
+    </section>
   );
 }

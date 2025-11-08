@@ -1,13 +1,61 @@
-* {
-  box-sizing: border-box;
+/* --- Reset / base --- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html, body, #root { font-family: "Inter", system-ui, sans-serif; height: 100%;}
+
+/* --- Knowledge Stack palette (tweak freely) --- */
+:root {
+  /* Main content */
+  --bg:            #FAFCFF;  /* brighter main surface */
+  --text:          #0B1220;  /* deep navy text */
+  --muted:         #5B6B80;  /* slate-ish secondary */
+  --hairline:      #E5ECF6;  /* light divider */
+
+  /* Sidebar — LIGHT */
+  --sidebar-bg:    #EEF3FF;  /* soft blue-white */
+  --sidebar-edge:  #D6E4FF;  /* subtle edge/border */
+  --sidebar-text:  #1F2A44;  /* dark enough for contrast */
+  --sidebar-muted: #6A7A95;  /* muted on light sidebar */
+  --chip-bg:       #EAF2FF;  /* pills/avatars/bg chips */
+
+  /* Brand */
+  --brand:         #2F6AFD;  /* primary blue */
+  --brand-hover:   #1E4FE3;  /* hover/active blue */
+  --accent:        #16B8A6;  /* supportive teal */
 }
 
-body, html {
-    margin: 0;
-    padding: 0;
+/* --- App layout (sidebar | main) --- */
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr); /* sidebar | content */
+  height: 100vh;                    /* full-height app */
 }
 
-html, body, #root {
-  font-family: Arial, Helvetica, sans-serif;
+/* --- Main workspace --- */
+.layout-main {
+  background-color: var(--bg);
+  color: var(--text);
+  padding-top: 56px;         /* fair top margin */
+  padding-left: 16px;
+  padding-right: 16px;
+  max-width: 100%;
+
+  display: block;            /* plain block; pages handle their own layout */
+  text-align: center;
+  overflow: auto;
 }
 
+/* Center the page title above the tiles (works for <h1> or .page-title) */
+.layout-main > h1,
+.layout-main > .page-title {
+  text-align: center;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+/* Center the tiles grid and cap max width */
+.layout-main > .tiles {
+  max-width: 1200px;
+  margin: 16px auto 64px;
+  padding: 0 16px;
+}
