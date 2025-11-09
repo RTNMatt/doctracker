@@ -9,20 +9,29 @@ import CollectionPage from "./pages/CollectionsPage.tsx";
 import DocumentsList from "./pages/DocumentsList";
 import DocumentRequirements from "./pages/DocumentRequirements";
 import SearchResultsPage from "./pages/SearchResultsPage.tsx";
+import DepartmentsListPage from "./pages/DepartmentsListPage.tsx";
+import CollectionsListPage from "./pages/CollectionsListPage.tsx";
+
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
-        {index: true, element: <HomeTilesPage />},
-        {path: "search", element: <SearchResultsPage />},
-        {path: "documents", element: <DocumentsList />},
-        {path: "documents/:id", element: <DocumentPage />},
-        {path: "documents/:id/requirements", element: <DocumentRequirements />},
-        {path: "departments/:slug", element: <DepartmentPage />},
-        {path: "collections/:slug", element: <CollectionPage />},
-      ],
+      { index: true, element: <HomeTilesPage /> },
+      { path: "search", element: <SearchResultsPage /> },
+      { path: "documents", element: <DocumentsList /> },
+      { path: "documents/:id", element: <DocumentPage /> },
+      { path: "documents/:id/requirements", element: <DocumentRequirements /> },
+
+      // NEW index pages
+      { path: "departments", element: <DepartmentsListPage /> },
+      { path: "collections", element: <CollectionsListPage /> },
+
+      // existing detail pages
+      { path: "departments/:slug", element: <DepartmentPage /> },
+      { path: "collections/:slug", element: <CollectionPage /> },
+    ],
   },
 ]);
 

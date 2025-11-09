@@ -1,15 +1,22 @@
-
 import "./Sidebar.css";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
+import PathTrail from "../components/PathTrail";
+import { usePathTree } from "../state/PathTree";
 
+type NavItem = {
+  to: string;
+  label: string;
+  exact?: boolean;
+};
 
 export default function Sidebar() {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { resetTo } = usePathTree();
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -17,31 +24,41 @@ export default function Sidebar() {
     if (term) navigate(`/search?q=${encodeURIComponent(term)}`);
   }
 
-  // Placeholder auth state; wire to your real auth when ready
-  const isSignedIn = false; // swap with real state
+  // Placeholder auth until wired
+  const isSignedIn = false;
   const userName = "Guest";
 
   function handleSignInOut() {
     if (isSignedIn) {
-      // TODO: real sign-out
       console.log("Sign out clicked");
     } else {
-      // TODO: real sign-in route/modal
       navigate("/login");
     }
   }
 
   function handleOpenSettings() {
-    // TODO: navigate to /settings or open a modal
     navigate("/settings");
   }
 
-  const nav = [
+  const nav: NavItem[] = [
     { to: "/", label: "Home", exact: true },
+    { to: "/departments", label: "Departments" },
+    { to: "/collections", label: "Collections" },
     { to: "/documents", label: "Documents" },
-    { to: "/collections/password-resets", label: "Example Collection" }, // tweak or remove
-    { to: "/departments/password-resets", label: "Example Department" }, // tweak or remove
   ];
+
+  // Reset the path tree when clicking top-level destinations
+  function handleNavClick(to: string) {
+    if (to === "/") {
+      resetTo(null); // clear the trail entirely on Home
+    } else if (to === "/departments") {
+      resetTo({ kind: "index", name: "Departments", url: "/departments" });
+    } else if (to === "/collections") {
+      resetTo({ kind: "index", name: "Collections", url: "/collections" });
+    } else if (to === "/documents") {
+      resetTo({ kind: "index", name: "Documents", url: "/documents" });
+    }
+  }
 
   return (
     <aside className="site-sidebar">
@@ -49,11 +66,12 @@ export default function Sidebar() {
         <div className="sidebar-logo">
           <img src="/logo-full.svg" alt="Knowledge Stack logo" />
         </div>
+
         {/* Search */}
         <form onSubmit={onSubmit} className="sidebar-search">
           <input
             type="search"
-            placeholder="Search docs, tags, collections…"
+            placeholder="Search docs, departments, collections…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             aria-label="Search"
@@ -67,7 +85,11 @@ export default function Sidebar() {
               const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
               return (
                 <li key={item.to}>
-                  <Link className={active ? "active" : ""} to={item.to}>
+                  <Link
+                    className={active ? "active" : ""}
+                    to={item.to}
+                    onClick={() => handleNavClick(item.to)}
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -75,11 +97,22 @@ export default function Sidebar() {
             })}
           </ul>
         </nav>
+
+        {/* Path trail in a card */}
+        <div className="pathtrail-card">
+          <PathTrail />
+        </div>
+        <div className="sidebar-spacer" aria-hidden="true" />
       </div>
 
       {/* Bottom: profile + settings */}
       <div className="sidebar-foot">
-        <button className="settings-btn" aria-label="Settings" title="Settings">
+        <button
+          className="settings-btn"
+          aria-label="Settings"
+          title="Settings"
+          onClick={handleOpenSettings}
+        >
           <Settings className="icon-cog" />
         </button>
 

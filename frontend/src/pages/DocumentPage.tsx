@@ -1,7 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { api } from "../lib/api";
-import './DocumentPage.css';
+import "./DocumentPage.css";
+import { usePathTree } from "../state/PathTree";
 
 type RawTag = {
   id: number;
@@ -11,7 +12,7 @@ type RawTag = {
   // Optional enhanced fields if backend is updated:
   target_kind?: "department" | "collection" | "document" | "external" | "none";
   target_value?: { slug?: string; id?: number; url?: string };
-  // Legacy link fields (your current backend already has these):
+  // Legacy link fields (supported by current backend):
   link_document?: number | null;
   link_url?: string | null;
   // If you later add these, they'll be picked up automatically:
@@ -20,7 +21,10 @@ type RawTag = {
 };
 
 type TagKind = "department" | "collection" | "document" | "external" | "none";
-type NormalizedTag = RawTag & { target_kind: TagKind; target_value: { slug?: string; id?: number; url?: string } };
+type NormalizedTag = RawTag & {
+  target_kind: TagKind;
+  target_value: { slug?: string; id?: number; url?: string };
+};
 
 function normalizeTag(t: RawTag): NormalizedTag {
   if (t.target_kind && t.target_value) return t as NormalizedTag; // enhanced API path
@@ -48,43 +52,58 @@ function openTag(t: NormalizedTag) {
   const k = t.target_kind;
   const v = t.target_value || {};
   let url = "";
-  if (k === "department" && v.slug)          url = `/departments/${v.slug}`;
-  else if (k === "collection" && v.slug)     url = `/collections/${v.slug}`;
+  if (k === "department" && v.slug)                 url = `/departments/${v.slug}`;
+  else if (k === "collection" && v.slug)            url = `/collections/${v.slug}`;
   else if (k === "document" && typeof v.id === "number") url = `/documents/${v.id}`;
-  else if (k === "external" && v.url)        url = v.url;
-  if (url) window.open(url, "_blank", "noopener,noreferrer");
+  else if (k === "external" && v.url)               url = v.url;
+  if (url) window.open(url, "_blank", "noopener,noreferrer"); // open in new tab (internal/external)
 }
 
 export default function DocumentPage() {
   const { id } = useParams();
+  const { enter } = usePathTree();
+
   const [doc, setDoc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // Load the document
   useEffect(() => {
+    let alive = true;
     (async () => {
       try {
+        setLoading(true);
         const res = await api.get(`/documents/${id}/`);
+        if (!alive) return;
         setDoc(res.data);
       } catch (e: any) {
+        if (!alive) return;
         setErr(e?.message ?? "Failed to load document");
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
+    return () => { alive = false; };
   }, [id]);
+
+  // Push this document into the sidebar path tree once we know it
+  useEffect(() => {
+    if (doc?.id && doc?.title) {
+      enter({ kind: "document", name: doc.title, url: `/documents/${doc.id}` });
+    }
+  }, [doc?.id, doc?.title, enter]);
 
   const grouped = useMemo(() => groupTags(doc?.tags), [doc?.tags]);
 
   if (loading) return <p>Loading...</p>;
-  if (err) return <p style={{color: "red"}}>{err}</p>;
+  if (err) return <p style={{ color: "red" }}>{err}</p>;
   if (!doc) return null;
 
   return (
     <>
       <h1 className="doc-title">{doc.title}</h1>
 
-      {/* TAG BAR (new) */}
+      {/* TAG BAR */}
       {(grouped.deptsOrCols.length || grouped.docLinks.length || grouped.externals.length) ? (
         <div className="doc-tagbar">
           {!!grouped.deptsOrCols.length && (
@@ -147,9 +166,11 @@ export default function DocumentPage() {
         <>
           <h3>Relevant Links</h3>
           <ul className="doc-links">
-            {doc.links.map((l:any) => (
+            {doc.links.map((l: any) => (
               <li key={l.id}>
-                <a href={l.url} target="_blank" rel="noreferrer">{l.title}</a>
+                <a href={l.url} target="_blank" rel="noreferrer">
+                  {l.title}
+                </a>
                 {l.note ? ` — ${l.note}` : ""}
               </li>
             ))}
@@ -158,14 +179,14 @@ export default function DocumentPage() {
       )}
 
       {doc.sections?.map((s: any) => (
-        <section className="doc-contents" key={s.id} style={{marginBlock: 16}}>
+        <section className="doc-contents" key={s.id} style={{ marginBlock: 16 }}>
           <div className="doc-left">
             <h3>{s.header}</h3>
-            <pre style={{whiteSpace: "pre-wrap"}}>{s.body_md}</pre>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{s.body_md}</pre>
           </div>
           <div className="doc-right">
             {s.image ? (
-              <div style={{margin: "8px 0"}}>
+              <div style={{ margin: "8px 0" }}>
                 <img className="doc-sec-img" src={s.image} alt={s.header || "section image"} />
               </div>
             ) : null}

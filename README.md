@@ -1,7 +1,7 @@
 # Knowledge Stack (formerly DocTracker)
 A modern, fast, and structured knowledge management app for teams.
 
-Knowledge Stack makes documentation easy to create, organize, search, and browse — without digging through shared drives, SharePoint jungles, or scattered notes.
+Knowledge Stack makes documentation easy to **create**, **organize**, **search**, and **navigate**—without digging through shared drives, SharePoint chaos, or scattered onboarding notes.
 
 ---
 
@@ -52,25 +52,30 @@ Each group uses **distinct colors and matching outlines** for readability.
 
 ---
 
-## 🖥️ UI Layout
+## 🧭 Sidebar Navigation + Path Tree
 
-- **Left Sidebar**
-  - Search
-  - Navigation
-  - Department / Collection access
-  - User avatar & settings (avatar upload planned)
+The left sidebar includes:
+- Logo + search
+- Main navigation: **Home**, **Departments**, **Collections**, **Documents**
+- **Path Tree Trail** → Displays “where you've navigated inside the hierarchy”
 
-- **Main Content**
-  - Tile-based browsing
-  - Clean and responsive document layout:
-    - One-column when no images
-    - Two-column when images are present
-  - Tag chips displayed at the top with color-coded grouping
+### Path Tree Behavior
+- Clicking into a Department → begins a trail
+- Clicking into a Collection from there → adds to the trail
+- Clicking into a Document → trail extends again
+- Clicking a previous node → resets forward branches
+- Clicking **Home / Departments / Collections / Documents** resets the trail
 
-- **Brand**
-  - Name: **Knowledge Stack**
-  - Palette: soft corporate light-mode theme
-  - Easily themeable via CSS variables
+This improves orientation and “where am I in the knowledge space?” awareness.
+
+
+---
+
+## 🖥️ Document Layout
+- Automatically switches:
+  - **One-column layout** (no images)
+  - **Two-column layout** (sections with images)
+- Tag chips appear at the top for contextual understanding
 
 ---
 
@@ -131,19 +136,23 @@ Search returns normalized results with:
 ```
 
 ## 🔧 Roadmap
+
 | Feature                                            | Status               |
 | -------------------------------------------------- | -------------------- |
-| Nested collections (self-nesting prevented)        | ✅ Done               |
-| Unified search across all knowledge objects        | ✅ Done               |
-| Clean light corporate UI theme                     | ✅ Done               |
-| Sidebar + tile-based navigation                    | ✅ Done               |
-| **Automatic department & collection tag creation** | ✅ Done               |
-| **Auto tag add/remove based on membership**        | ✅ Done               |
-| Tag grouping + color-coded chips                   | ✅ Done               |
+| Nested collections (self-nesting prevented)        | ✅ Done              |
+| Unified search across all knowledge objects        | ✅ Done              |
+| Clean light corporate UI theme                     | ✅ Done              |
+| Sidebar + tile-based navigation                    | ✅ Done              |
+| **Automatic department & collection tag creation** | ✅ Done              |
+| **Auto tag add/remove based on membership**        | ✅ Done              |
+| Tag grouping + color-coded chips on document pages | ✅ Done              |
+| **Sidebar Path Tree (context trail navigation)**   | ✅ Done              |
+| **Departments & Collections top-level browse pages** | ✅ Done            |
 | User profile uploads                               | 🔜 Planned           |
 | Dark mode themes                                   | 🔜 Planned           |
 | Access control & sharing modes                     | 🔜 Planned           |
 | Multi-tenant support                               | Future consideration |
+
 
 
 ## 🏢 Intended Use Cases

@@ -59,3 +59,8 @@ html, body, #root { font-family: "Inter", system-ui, sans-serif; height: 100%;}
   margin: 16px auto 64px;
   padding: 0 16px;
 }
+
+.home-title {
+  font-size: 60px;
+  padding-bottom: 10%;
+}
