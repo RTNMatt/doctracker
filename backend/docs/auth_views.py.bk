@@ -1,0 +1,62 @@
+# docs/auth_views.py
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.contrib.auth import authenticate
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .models import Membership
+from .auth_backend import set_auth_cookies, clear_auth_cookies
+
+@method_decorator(csrf_exempt, name="dispatch")  # dev-only; replace with proper CSRF later
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        user = authenticate(request, username=username, password=password)
+        if not user:
+            return Response({"detail": "Invalid credentials"}, status=401)
+        refresh = RefreshToken.for_user(user)
+        resp = Response({"ok": True})
+        return set_auth_cookies(resp, refresh, secure=False, samesite="Lax")
+
+class LogoutView(APIView):
+    authentication_classes = []
+    def post(self, request):
+        resp = Response({"ok": True})
+        return clear_auth_cookies(resp)
+
+class MeView(APIView):
+    def get(self, request):
+        org = getattr(request, "org", None)
+        role = None
+        if org and request.user.is_authenticated:
+            role = Membership.objects.filter(org=org, user=request.user)\
+                                     .values_list("role", flat=True).first()
+        return Response({
+            "user": {"id": request.user.id, "username": request.user.username} if request.user.is_authenticated else None,
+            "org": {"id": getattr(org, "id", None), "slug": getattr(org, "slug", None)} if org else None,
+            "role": role,
+            "authenticated": request.user.is_authenticated,
+        })
+
+@method_decorator(csrf_exempt, name="dispatch")  # dev-only
+class RefreshView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    def post(self, request):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        raw = request.COOKIES.get("refresh")
+        if not raw:
+            return Response({"detail": "No refresh"}, status=401)
+        try:
+            old = RefreshToken(raw)
+            new_refresh = RefreshToken.for_user(old.user)
+        except Exception:
+            return Response({"detail": "Invalid refresh"}, status=401)
+        resp = Response({"ok": True})
+        return set_auth_cookies(resp, new_refresh, secure=False, samesite="Lax")

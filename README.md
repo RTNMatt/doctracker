@@ -1,7 +1,7 @@
 # Knowledge Stack (formerly DocTracker)
-A modern, fast, and structured knowledge management app for teams.
+A modern, fast, structured knowledge-management system for teams.
 
-Knowledge Stack makes documentation easy to **create**, **organize**, **search**, and **navigate**—without digging through shared drives, SharePoint chaos, or scattered onboarding notes.
+Knowledge Stack makes documentation easy to **create**, **organize**, **search**, **edit**, and **navigate**—without the chaos of shared drives, SharePoint, or outdated wiki tools.
 
 ---
 
@@ -9,77 +9,103 @@ Knowledge Stack makes documentation easy to **create**, **organize**, **search**
 
 | Layer | Technology |
 |------|------------|
-| Frontend | **React** + **Vite** (TypeScript) |
-| Backend API | **Django** + **Django REST Framework** |
-| Database | SQLite (local), **PostgreSQL recommended** for production |
-| Styling | Custom CSS with theme variables (light-neutral UI) |
-| Images | Handled with `Pillow` on backend |
-| Search | Unified search across Documents, Collections, Departments, and Tags |
+| Frontend | **React + Vite** (TypeScript) |
+| Backend API | **Django 5** + **Django REST Framework** |
+| Database | SQLite (local dev) — **PostgreSQL recommended** for production |
+| Styling | Custom CSS with design tokens (`--brand`, `--text`, etc.) |
+| Images | Uploaded via Django + Pillow |
+| Auth | Session-based auth w/ role support (`Admin`, `Editor`, `Viewer`) |
+| Search | Unified cross-entity search (Documents, Collections, Departments, Tags) |
 
 ---
 
 ## 🧠 Core Concepts
 
-| Entity | Description |
-|-------|-------------|
-| **Documents** | Content pages with rich text sections, optional images, and resource links. |
-| **Collections** | Curated groups of documents. Collections can nest other collections (self-nesting prevented). Useful for onboarding sequences, playbooks, knowledge guides. |
-| **Departments** | High-level organizational grouping (e.g., Network, HR, IT Service Desk). |
-| **Tags** | Used for visual grouping and navigation. Includes automatic *structural tags*. |
-| **Search** | Finds documents, collections, departments, or tags with relevance-scored snippets. |
+### **Documents**
+- Multi-section pages
+- Markdown/plain-text body
+- Optional images per section
+- Inline links (external or internal)
+- Tag bar for contextual navigation
+- Supports **draft/edit** mode with autosave warning
+- Restrict visibility to **everyone** or **specific departments**
 
----
+### **Collections**
+- Group related documents
+- Nested collections supported (no self-nesting)
+- Auto-created *structural tags*
+- Collection membership editable via modal
+- Automatically updates the document’s tags
 
-## 🔖 Tags (Automatic + Manual)
+### **Departments**
+- Organizational categories (IT, HR, etc.)
+- Documents inherit *department tags* automatically
+- Department pages list all associated documents
 
-Knowledge Stack uses a **smart tag system**:
+### **Tags**
+Two categories:
 
-| Tag Type | How It’s Created | Used For | Behavior |
-|---------|------------------|---------|---------|
-| **Department Tags** | Automatically created + maintained | Show which department a document belongs to | Added/removed when department membership changes |
-| **Collection Tags** | Automatically created + maintained | Show collection membership | Added/removed when collection membership changes |
-| **Document Link Tags** | Manually added | Quick jump to related internal documents | Clicking opens another document internally |
-| **External Link Tags** | Manually added | Point to resources like vendor docs / URLs | Clicking opens a new tab |
+| Tag Type | Created/Edited | Purpose |
+|---------|----------------|---------|
+| **Structural tags** | Auto-maintained | Represent department + collection membership |
+| **Manual tags** | User-managed | Related documents, URLs, etc. |
 
-### Display Behavior
-Tags are grouped on the document page into:
-
-- **Related Areas** (Departments & Collections)
+Grouped visually on the Document Page as:
+- **Related Areas** (Collections + Departments)
 - **Related Documents**
 - **External Resources**
 
-Each group uses **distinct colors and matching outlines** for readability.
+### **Tag Colors**
+- Department: Pale blue
+- Collection: Mint green
+- Document: Warm gold
+- External link: Purple
+*(Includes matching outline highlights)*
 
 ---
 
-## 🧭 Sidebar Navigation + Path Tree
+## 🧭 Navigation + Path Tree
 
 The left sidebar includes:
-- Logo + search
-- Main navigation: **Home**, **Departments**, **Collections**, **Documents**
-- **Path Tree Trail** → Displays “where you've navigated inside the hierarchy”
+- Search
+- Documents
+- Collections
+- Departments
+- Home
+- Dynamic Path Tree (click trail)
 
-### Path Tree Behavior
-- Clicking into a Department → begins a trail
-- Clicking into a Collection from there → adds to the trail
-- Clicking into a Document → trail extends again
-- Clicking a previous node → resets forward branches
-- Clicking **Home / Departments / Collections / Documents** resets the trail
-
-This improves orientation and “where am I in the knowledge space?” awareness.
-
+**Path Tree Behavior**
+- Automatically records route chain
+- Clicking a previous node rewinds the navigation branch
+- Navigating “Home / Departments / Collections / Documents” resets tree
 
 ---
 
-## 🖥️ Document Layout
-- Automatically switches:
-  - **One-column layout** (no images)
-  - **Two-column layout** (sections with images)
-- Tag chips appear at the top for contextual understanding
+## 🧩 Document Editing Mode
+
+Document editing includes:
+
+- Title editing
+- Status (“active”, “draft”, etc.)
+- Toggle visibility (**everyone** vs restricted)
+- Ensure restricted docs have at least **one department**
+- Add/edit/remove:
+  - Sections (header, body, image)
+  - Inline links
+- Manage Tags (modal)
+  - Manual tags editable
+  - Structural tags locked
+- Manage Collections (modal)
+  - Add/remove collection membership
+  - Create collections from modal
+- Autosave-warning if closing with unsaved doc-level changes
+- “Save Document” only patches top-level metadata
+
+Tags & Collections update live through their modals.
 
 ---
 
-## 🚀 Getting Started (Development)
+## 🚀 Getting Started
 
 ### 1. Clone repo
 ```sh
@@ -137,21 +163,29 @@ Search returns normalized results with:
 
 ## 🔧 Roadmap
 
-| Feature                                            | Status               |
-| -------------------------------------------------- | -------------------- |
-| Nested collections (self-nesting prevented)        | ✅ Done              |
-| Unified search across all knowledge objects        | ✅ Done              |
-| Clean light corporate UI theme                     | ✅ Done              |
-| Sidebar + tile-based navigation                    | ✅ Done              |
-| **Automatic department & collection tag creation** | ✅ Done              |
-| **Auto tag add/remove based on membership**        | ✅ Done              |
-| Tag grouping + color-coded chips on document pages | ✅ Done              |
-| **Sidebar Path Tree (context trail navigation)**   | ✅ Done              |
-| **Departments & Collections top-level browse pages** | ✅ Done            |
-| User profile uploads                               | 🔜 Planned           |
-| Dark mode themes                                   | 🔜 Planned           |
-| Access control & sharing modes                     | 🔜 Planned           |
-| Multi-tenant support                               | Future consideration |
+| Feature                                                     | Status               |
+| ----------------------------------------------------------- | -------------------- |
+| Nested collections (self-nesting prevented)                 | ✅ Done               |
+| Unified search across all knowledge objects                 | ✅ Done               |
+| Clean light corporate UI theme                              | ✅ Done               |
+| Sidebar + tile-based navigation                             | ✅ Done               |
+| **Automatic department & collection tag creation**          | ✅ Done               |
+| **Auto tag add/remove based on membership**                 | ✅ Done               |
+| Tag grouping + color-coded chips on document pages          | ✅ Done               |
+| **Sidebar Path Tree (context trail navigation)**            | ✅ Done               |
+| **Departments & Collections top-level browse pages**        | ✅ Done               |
+| **Manage Tags modal (manual tag assignment UI)**            | ✅ Done               |
+| **Manage Collections modal (multi-select, create, remove)** | ✅ Done               |
+| **Document edit mode with Save/Discard + warnings**         | ✅ Done               |
+| **Autosave protection (browser navigation warning)**        | ✅ Done               |
+| User profile uploads                                        | 🔜 Planned           |
+| Dark mode themes                                            | 🔜 Planned           |
+| Access control & sharing modes                              | 🔜 Planned           |
+| **Document visibility rules (everyone vs dept-restricted)** | 🔜 In Progress       |
+| **Role system (Admin, Editor, Viewer)**                     | 🔜 Planned           |
+| Versioning & draft/published states                         | 🔜 Planned           |
+| Multi-tenant support                                        | Future consideration |
+
 
 
 

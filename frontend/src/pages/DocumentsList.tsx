@@ -1,48 +1,52 @@
-import { useEffect, useState } from "react";
-import { api } from "../lib/api";
-import type { Document as Doc } from "../lib/types";
-
-function normalizeArray<T>(data: any): T[] {
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.results)) return data.results;
-  return [];
-}
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function DocumentsList() {
-  const [docs, setDocs] = useState<Doc[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get("/documents/");
-        setDocs(normalizeArray<Doc>(res.data));
-      } catch (e: any) {
-        setErr(e?.message ?? "Failed to load");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) return <div style={{ padding: 24 }}>Loading…</div>;
-  if (err) return <div style={{ padding: 24, color: "red" }}>{err}</div>;
+  const { isAdmin, isEditor } = useAuth();
+  const canEdit = isAdmin || isEditor;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>Documents</h2>
-      {docs.length === 0 ? (
-        <p>No documents found.</p>
-      ) : (
-        <ul>
-          {docs.map((d) => (
-            <li key={d.id}>
-              <strong>{d.title}</strong>{" "}
-              <a href={`/documents/${d.id}/requirements`}>requirements</a>
-            </li>
-          ))}
-        </ul>
+    <div className="page-wrapper">
+      <div className="page-header">
+        <h1>Content</h1>
+      </div>
+
+      {!canEdit && (
+        <div className="info-card">
+          <h2>Browse Knowledge</h2>
+          <p>
+            You currently have read-only access in this organization.
+            Use <strong>Departments</strong>, <strong>Collections</strong>, or{" "}
+            <strong>Search</strong> to find the documentation you need.
+          </p>
+        </div>
+      )}
+
+      {canEdit && (
+        <div className="card-grid">
+          <div className="tool-card">
+            <h2>Create a new document</h2>
+            <p>
+              Start a new guide, SOP, or knowledge article. You can later attach it
+              to departments and collections.
+            </p>
+            <Link to="/documents/new" className="button-primary">
+              + New Document
+            </Link>
+          </div>
+
+          {/* Placeholder for when you’re ready to add collection creation */}
+          <div className="tool-card tool-card--disabled">
+            <h2>Create a new collection</h2>
+            <p>
+              Group documents into an onboarding flow, playbook, or project guide.
+              (Coming soon)
+            </p>
+            <button className="button-secondary" disabled>
+              Coming soon
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

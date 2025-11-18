@@ -9,19 +9,101 @@
 
 /* Optional header structure if present */
 .document-header {
-  max-width: 1280px;          /* widened a bit */
+  max-width: 1280px;
   margin: 0 auto 20px;
   padding: 0 16px;
 }
+
+.document-header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.document-header-meta {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 .document-title {
   margin: 0 0 8px;
   font-size: clamp(22px, 3.6vw, 32px);
   line-height: 1.2;
   color: var(--text);
 }
+
 .document-meta {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.document-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Status pill & collections pill */
+.document-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--surface, #f5f5f8);
+  color: var(--muted, #555);
+}
+
+.document-collections-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--surface, #f5f5f8);
+  color: var(--muted, #555);
+}
+
+/* Header buttons */
+.document-save-btn,
+.document-edit-toggle {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.document-save-btn {
+  background: var(--brand, #3a7bfa);
+  color: #fff;
+  border-color: var(--brand, #3a7bfa);
+}
+
+.document-save-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.document-edit-toggle {
+  background: var(--surface, #f7f7f9);
+  color: var(--text, #222);
+  border-color: var(--hairline, #ddd);
+}
+
+/* Error text at top of page */
+.document-error {
+  color: red;
+  margin-top: 8px;
+  max-width: 1280px;
+  padding: 0 16px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* -------- Links block -------- */
@@ -32,39 +114,82 @@
   display: grid;
   gap: 6px;
 }
+
 .doc-links a {
   text-decoration: none;
   font-style: italic;
   color: var(--brand);
 }
+
 .doc-links a:hover {
   text-decoration: underline;
+}
+
+/* Inline edit buttons etc. */
+.doc-inline-edit-btn {
+  margin-left: 8px;
+  font-size: 0.8rem;
+}
+
+.doc-inline-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Forms for link editing/adding */
+.doc-link-edit-form {
+  display: inline-block;
+  width: 100%;
+  max-width: 600px;
+}
+
+.doc-link-edit-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.doc-links-add-block {
+  margin-top: 16px;
+  margin-bottom: 24px;
+  max-width: 1280px;
+  padding: 0 16px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.doc-link-add-form {
+  max-width: 600px;
+  display: grid;
+  gap: 6px;
+}
+
+/* Generic small error text */
+.doc-error-text {
+  color: red;
 }
 
 /* -------- Two-column content -------- */
 .doc-contents {
   display: grid;
-  /* widen overall and give left column a touch more space */
   grid-template-columns: 1.25fr 0.95fr;
   gap: 30px;
 
-  max-width: 1280px;          /* widened from 1200px */
-  margin: 0 auto;             /* centered */
-  padding: 0 20px;            /* slightly wider side gutters */
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 /* Left column (body/sections) */
 .doc-left {
-  min-width: 0;               /* prevent overflow */
+  min-width: 0;
 }
 
 /* Right column (image/preview/panel) — NO BOX STYLE */
 .doc-right {
   min-width: 0;
-  min-height: 0;              /* no forced height if empty */
+  min-height: 0;
   display: grid;
-  place-items: center;        /* centers content if present */
-  /* removed background/border/padding so there’s no box when empty */
+  place-items: center;
 }
 
 /* -------- Section content -------- */
@@ -73,23 +198,42 @@
   padding-bottom: 16px;
   border-bottom: 1px solid var(--hairline);
 }
+
 .doc-section:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
+
 .doc-section-title {
   margin: 0 0 8px;
   font-size: clamp(16px, 2.2vw, 20px);
   font-weight: 600;
   color: var(--text);
 }
+
 .doc-section-body {
   color: var(--text);
   line-height: 1.6;
 }
-.doc-section-body p { margin: 0 0 10px; }
+
+.doc-section-body p {
+  margin: 0 0 10px;
+}
+
 .doc-section-body ul,
-.doc-section-body ol { margin: 0 0 10px 18px; }
+.doc-section-body ol {
+  margin: 0 0 10px 18px;
+}
+
+/* Preformatted body text */
+.doc-section-pre {
+  white-space: pre-wrap;
+}
+
+/* Wrapper for section images if needed */
+.doc-section-image-wrapper {
+  margin: 8px 0;
+}
 
 /* -------- Section images (NO BORDER/BOX) -------- */
 .doc-sec-img {
@@ -97,7 +241,6 @@
   max-height: 50%;
   height: auto;
   object-fit: contain;
-  /* removed border/background/radius to eliminate the box look */
   display: block;
   border-radius: 8px;
 }
@@ -108,30 +251,46 @@
   font-size: 0.95rem;
 }
 
+/* Section edit/add forms */
+.doc-section-edit-form,
+.doc-section-add-form {
+  display: grid;
+  gap: 8px;
+}
+
+.doc-image-label {
+  font-size: 0.9rem;
+}
+
+/* Add section block spacing */
+.doc-add-section-block {
+  margin-block: 24px;
+}
+
 /* -------- Responsive -------- */
 @media (max-width: 1000px) {
   .doc-contents {
     gap: 22px;
     max-width: 95%;
-    grid-template-columns: 1.1fr 0.9fr; /* keep a little bias to the left */
+    grid-template-columns: 1.1fr 0.9fr;
   }
 }
 
 @media (max-width: 800px) {
   .doc-contents {
-    grid-template-columns: 1fr;   /* stack on small screens */
+    grid-template-columns: 1fr;
     max-width: 100%;
     gap: 18px;
   }
   .doc-right {
-    min-height: 0;                /* ensure no empty box on mobile either */
+    min-height: 0;
   }
 }
 
 /* If the right column is empty, collapse to a single centered column */
 .doc-contents:has(.doc-right:empty) {
   grid-template-columns: 1fr;
-  max-width: 900px;   /* nice reading width */
+  max-width: 900px;
 }
 
 /* Don’t render an empty right column */
@@ -145,6 +304,10 @@
   gap: 8px 14px;
   grid-template-columns: 1fr;
   margin: 6px 0 10px;
+  max-width: 1280px;
+  padding: 0 16px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .tag-group {
@@ -153,12 +316,14 @@
   gap: 8px;
   align-items: center;
 }
+
 .tag-group-label {
   color: var(--muted);
   font-size: 0.9rem;
   text-align: right;
   padding-right: 6px;
 }
+
 .tag-chips {
   display: flex;
   flex-wrap: wrap;
@@ -174,27 +339,114 @@
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
 }
-.tag-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(47,106,253,0.12); }
-.tag-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.tag-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(47, 106, 253, 0.12);
+}
+
+.tag-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 
 /* Group colors */
 :root {
-  --tag-dept-bg: #EAF2FF;  --tag-dept-fg: #1F2A44;  --tag-dept-ol: #C8DAFF;
-  --tag-col-bg:  #E8FFF5;  --tag-col-fg:  #055941;  --tag-col-ol:  #CDEEE3;
-  --tag-doc-bg:  #FFF5E6;  --tag-doc-fg:  #7A4A00;  --tag-doc-ol:  #FFE3B3;
-  --tag-ext-bg:  #F3E8FF;  --tag-ext-fg:  #3B1E7A;  --tag-ext-ol:  #E2D3FF;
+  --tag-dept-bg: #eaf2ff;
+  --tag-dept-fg: #1f2a44;
+  --tag-dept-ol: #c8daff;
+  --tag-col-bg: #e8fff5;
+  --tag-col-fg: #055941;
+  --tag-col-ol: #cdeee3;
+  --tag-doc-bg: #fff5e6;
+  --tag-doc-fg: #7a4a00;
+  --tag-doc-ol: #ffe3b3;
+  --tag-ext-bg: #f3e8ff;
+  --tag-ext-fg: #3b1e7a;
+  --tag-ext-ol: #e2d3ff;
 }
 
 /* outlines now match each tag's palette */
-.tag-chip.is-dept { background: var(--tag-dept-bg); color: var(--tag-dept-fg); border-color: transparent; outline: 2px solid var(--tag-dept-ol); }
-.tag-chip.is-col  { background: var(--tag-col-bg);  color: var(--tag-col-fg);  border-color: transparent; outline: 2px solid var(--tag-col-ol); }
-.tag-chip.is-doc  { background: var(--tag-doc-bg);  color: var(--tag-doc-fg);  border-color: transparent; outline: 2px solid var(--tag-doc-ol); }
-.tag-chip.is-ext  { background: var(--tag-ext-bg);  color: var(--tag-ext-fg);  border-color: transparent; outline: 2px solid var(--tag-ext-ol); }
+.tag-chip.is-dept {
+  background: var(--tag-dept-bg);
+  color: var(--tag-dept-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-dept-ol);
+}
+
+.tag-chip.is-col {
+  background: var(--tag-col-bg);
+  color: var(--tag-col-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-col-ol);
+}
+
+.tag-chip.is-doc {
+  background: var(--tag-doc-bg);
+  color: var(--tag-doc-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-doc-ol);
+}
+
+.tag-chip.is-ext {
+  background: var(--tag-ext-bg);
+  color: var(--tag-ext-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-ext-ol);
+}
 
 /* Responsive */
 @media (max-width: 800px) {
-  .tag-group { grid-template-columns: 1fr; }
-  .tag-group-label { text-align: left; }
+  .tag-group {
+    grid-template-columns: 1fr;
+  }
+  .tag-group-label {
+    text-align: left;
+  }
+}
+
+/* ----- Document meta / visibility section ----- */
+.doc-meta-edit {
+  max-width: 1280px;
+  margin: 0 auto 24px;
+  padding: 0 16px;
+}
+
+.doc-visibility-block {
+  margin: 8px 0 12px;
+}
+
+.doc-toggle-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.doc-visibility-note {
+  font-size: 0.85rem;
+  margin-top: 4px;
+  color: var(--muted, #666);
+}
+
+/* ----- Tags / collections edit section ----- */
+.doc-tags-edit {
+  max-width: 1280px;
+  margin: 0 auto 24px;
+  padding: 0 16px;
+}
+
+.doc-tags-text {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.doc-separator {
+  margin: 20px 0;
 }

@@ -11,13 +11,16 @@ This document outlines the major feature areas for Knowledge Stack and the recom
 - Seed demo data for testing + marketing screenshots
 - Standardize loading / empty / error states
 - Add basic smoke tests (models, serializers, API)
+- **Refine UI layout & spacing for documents, tags, collections** (new)
+- **Improve modal UX consistency (tags, collections, future editors)** (new)
 
 ---
 
 ### B) Auth, Users, Roles, Access Control
 - User authentication (session or JWT in HttpOnly cookie)
 - User roles: **Admin**, **Editor**, **Viewer**
-- Enforce document visibility (`everyone=false` → restricted)
+- **Visibility toggle (`everyone=true/false`) on documents** — *partially implemented*
+- **Require at least one department when `everyone=false`** — *planned next*
 - Organization / tenant structure (enables custom branding)
 - Two-Factor Authentication (TOTP)
 - Email verification & password reset flows
@@ -26,10 +29,14 @@ This document outlines the major feature areas for Knowledge Stack and the recom
 
 ### C) Content Management (In-App Authoring)
 - Create / Edit / Delete:
-  - Documents
-  - Departments
-  - Collections
+  - **Documents (sections, images, links)** — *completed*
+  - **Departments** — *completed*
+  - **Collections** — *completed*
   - Document Templates
+- **Unified document metadata saving (title/status/visibility)** — *implemented*
+- **Manage Tags modal (full CRUD except structural)** — *completed*
+- **Manage Collections modal (+ create & attach)** — *completed*
+- **Autosave warnings for unsaved metadata** — *implemented*
 - Rich Text / Markdown editing
 - Draft → Publish workflow
 - Version history & change tracking
@@ -47,10 +54,12 @@ This document outlines the major feature areas for Knowledge Stack and the recom
 ---
 
 ### E) Discovery & Navigation Enhancements
+- **Unified search across documents/departments/collections** — *completed*
 - Search filters (type / department / collection / tag)
 - Improved search UI + sorting options
 - Keyboard shortcuts (quick search)
 - Client-side caching and pagination polish
+- **Sidebar Path Tree for breadcrumb-like navigation** — *completed*
 
 ---
 
@@ -121,27 +130,3 @@ This document outlines the major feature areas for Knowledge Stack and the recom
 
 ---
 
-## ✅ Recommended Build Order (Minimizing Rework)
-
-1. **Auth + Roles + Document Visibility**
-2. **In-App Authoring UI + Draft/Publish + Versioning**
-3. **Staleness / Review Workflow + Audit Logging**
-4. **Theme Token System + Org Branding Controls**
-5. **Search Filtering & Navigation Polishing**
-6. **Security Hardening + Password Reset + 2FA**
-7. **Drive/OneDrive Import Integrations**
-8. **Deployment Infrastructure + Staging Environment**
-9. **Marketing Website**
-10. **Comments / @mentions / Share Links**
-11. **Templates + PDF Export**
-12. **Analytics + Accessibility + i18n**
-
----
-
-## 🎯 Current Next Step
-Begin **Step 1: Auth & RBAC Foundation**
-- Add user login + roles
-- Enforce document visibility rules in the API
-- Add frontend session awareness (sign in / sign out)
-
----

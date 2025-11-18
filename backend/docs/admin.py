@@ -1,143 +1,208 @@
+# docs/admin.py
 from django.contrib import admin
-from django import forms
-from .services.tags import sync_structural_tags, ensure_collection_tag, ensure_department_tag
-from .models import (
-    Department, Template, Document, Section, ResourceLink, Tag, RequirementSnippet, Collection, Tile,
-)
+from django.utils.html import format_html
 
-@admin.register(Department)
-class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug")
+from .models import (
+    Organization, Membership,
+    Department, Template, Document, Section, ResourceLink,
+    Tag, RequirementSnippet,
+    Collection, Tile,
+)
+from .services.tags import sync_structural_tags, ensure_department_tag
+
+
+# -----------------------------
+# Helpers
+# -----------------------------
+def get_request_org(request):
+    # Provided by your OrgMiddleware (None in plain localhost/admin without subdomain or header)
+    return getattr(request, "org", None)
+
+
+class OrgScopedAdmin(admin.ModelAdmin):
+    """
+    Base admin that:
+      - Filters queryset by request.org when present
+      - Auto-sets instance.org on save if missing
+      - Limits FK/M2M choices to same org
+    """
+    readonly_fields = tuple()
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        org = get_request_org(request)
+        if org and hasattr(self.model, "org_id"):
+            return qs.filter(org=org)
+        return qs
+
+    def save_model(self, request, obj, form, change):
+        if hasattr(obj, "org_id"):
+            org = get_request_org(request)
+            if org and obj.org_id is None:
+                obj.org = org
+        super().save_model(request, obj, form, change)
+
+    # Limit FK choices to same org when possible
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        org = get_request_org(request)
+        if org:
+            qs = kwargs.get("queryset")
+            if qs is not None and hasattr(qs.model, "org_id"):
+                kwargs["queryset"] = qs.model.objects.filter(org=org)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    # Limit M2M choices to same org when possible
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        org = get_request_org(request)
+        if org:
+            qs = kwargs.get("queryset")
+            if qs is not None and hasattr(qs.model, "org_id"):
+                kwargs["queryset"] = qs.model.objects.filter(org=org)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+
+# -----------------------------
+# Core: Organization & Membership
+# -----------------------------
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "brand_primary")
     search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(Membership)
+class MembershipAdmin(admin.ModelAdmin):
+    list_display = ("user", "org", "role")
+    list_filter = ("org", "role")
+    search_fields = ("user__username", "user__email", "org__name", "org__slug")
+    autocomplete_fields = ("user", "org")
+
+
+# -----------------------------
+# Departments
+# -----------------------------
+class DepartmentAdmin(OrgScopedAdmin):
+    list_display = ("name", "slug", "org")
+    list_filter = ("org",)
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        from .services.tags import ensure_department_tag
+        # Ensure structural tag after save
         ensure_department_tag(obj)
 
+admin.site.register(Department, DepartmentAdmin)
 
-@admin.register(Template)
-class TemplateAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "font_family", "base_font_size_px", "color_accent")
+
+# -----------------------------
+# Templates
+# -----------------------------
+class TemplateAdmin(OrgScopedAdmin):
+    list_display = ("name", "slug", "org")
+    list_filter = ("org",)
     search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
+admin.site.register(Template, TemplateAdmin)
 
 
+# -----------------------------
+# Documents (+ inlines)
+# -----------------------------
 class SectionInline(admin.TabularInline):
     model = Section
-    extra = 1
-    fields = ("order", "header", "body_md", "image")
+    extra = 0
+    fields = ("header", "body_md", "image")
 
 
 class ResourceLinkInline(admin.TabularInline):
     model = ResourceLink
-    extra = 1
-    fields = ("order", "title", "url", "note")
+    extra = 0
+    fields = ("title", "url", "note")
 
 
-@admin.register(Document)
-class DocumentAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "status", "everyone", "last_reviewed", "updated_at")
-    list_filter = ("status", "everyone", "departments", "tags")
-    search_fields = ("title",)
-    autocomplete_fields = ("template", "departments", "tags")
-    inlines = [SectionInline, ResourceLinkInline]
-    readonly_fields = ("id",)
+class DocumentAdmin(OrgScopedAdmin):
+    list_display = ("title", "status", "everyone", "org")
+    list_filter = ("org", "status", "everyone", "departments")
+    search_fields = ("title", "sections__body_md", "links__title", "links__url", "links__note")
+    autocomplete_fields = ("departments", "tags")
+    inlines = (SectionInline, ResourceLinkInline)
 
-    def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
-        sync_structural_tags(form.instance)   # <- run after M2M updates
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        # Keep auto-tag sync behavior consistent with views
+        sync_structural_tags(obj)
 
-
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "link_document", "link_url")
-    search_fields = ("name", "slug")
-    autocomplete_fields = ("link_document",)
+admin.site.register(Document, DocumentAdmin)
 
 
-@admin.register(RequirementSnippet)
-class RequirementSnippetAdmin(admin.ModelAdmin):
-    list_display = ("title", "tag", "priority", "active")
-    list_filter = ("active", "tag")
-    search_fields = ("title", "content_md")
-    autocomplete_fields = ("tag",)
+# -----------------------------
+# Tags
+# -----------------------------
+class TagAdmin(OrgScopedAdmin):
+    list_display = ("name", "slug", "org", "linked_target")
+    list_filter = ("org",)
+    search_fields = ("name", "slug", "description")
+    autocomplete_fields = ("link_document", "link_department", "link_collection")
+
+    def linked_target(self, obj):
+        if obj.link_document_id:
+            return format_html("📄 Document #{}", obj.link_document_id)
+        if obj.link_department_id:
+            return format_html("🗂️ Dept: {}", obj.link_department.slug if obj.link_department else "")
+        if obj.link_collection_id:
+            return format_html("🏷️ Collection: {}", obj.link_collection.slug if obj.link_collection else "")
+        if obj.link_url:
+            return "↗ External"
+        return "—"
+
+    linked_target.short_description = "Target"
+
+admin.site.register(Tag, TagAdmin)
 
 
-@admin.register(Tile)
-class TileAdmin(admin.ModelAdmin):
-    list_display = ("title", "kind", "order", "is_active")
-    list_filter = ("kind", "is_active")
+# -----------------------------
+# Requirement Snippets (hidden)
+# -----------------------------
+# You’re moving requirements to “a document linked to a tag”, so don’t register this model.
+# If you later need it visible (read-only), we can add a read-only admin.
+# class RequirementSnippetAdmin(OrgScopedAdmin):
+#     list_display = ("title", "tag", "org")
+#     list_filter = ("org", "tag")
+#     search_fields = ("title", "content_md", "tag__name")
+# admin.site.register(RequirementSnippet, RequirementSnippetAdmin)
+
+
+# -----------------------------
+# Collections
+# -----------------------------
+class CollectionAdmin(OrgScopedAdmin):
+    list_display = ("name", "slug", "order", "org")
+    list_filter = ("org",)
+    search_fields = ("name", "slug", "description")
+    prepopulated_fields = {"slug": ("name",)}
+    filter_horizontal = ("documents", "subcollections")
+
+admin.site.register(Collection, CollectionAdmin)
+
+
+# -----------------------------
+# Tiles
+# -----------------------------
+class TileAdmin(OrgScopedAdmin):
+    list_display = ("title", "kind", "is_active", "order", "org")
+    list_filter = ("org", "kind", "is_active")
     search_fields = ("title", "description", "href")
     autocomplete_fields = ("document", "department", "collection")
 
-class CollectionAdminForm(forms.ModelForm):
-    class Meta:
-        model = Collection
-        fields = "__all__"
+admin.site.register(Tile, TileAdmin)
 
-    def clean_subcollections(self):
-        subs = self.cleaned_data.get("subcollections")
-        instance = self.instance
 
-        # Self-nesting
-        if instance.pk and subs.filter(pk=instance.pk).exists():
-            raise forms.ValidationError("A collection cannot include itself.")
-
-        # Cycle detection: child -> ... -> instance
-        if instance.pk:
-            target_pk = instance.pk
-
-            def has_path_to_target(start):
-                seen = set()
-                stack = [start]
-                while stack:
-                    node = stack.pop()
-                    if node.pk == target_pk:
-                        return True
-                    if node.pk in seen:
-                        continue
-                    seen.add(node.pk)
-                    stack.extend(node.subcollections.all())
-                return False
-
-            for child in subs.all():
-                if has_path_to_target(child):
-                    raise forms.ValidationError(
-                        f"Adding '{child.name}' would create a circular collection chain."
-                    )
-
-        return subs
-
-@admin.register(Collection)
-class CollectionAdmin(admin.ModelAdmin):
-    form = CollectionAdminForm
-    list_display = ("name", "slug", "order")
-    search_fields = ("name", "slug")
-    filter_horizontal = ("documents", "subcollections")
-
-    def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
-        col = form.instance
-        for doc in col.documents.all():
-            sync_structural_tags(doc)
-
-    def save_model(self, request, obj, form, change):
-        # obj is the Collection instance (has .name, .slug, etc.)
-        super().save_model(request, obj, form, change)
-        from .services.tags import ensure_collection_tag
-        ensure_collection_tag(obj)  # <-- pass obj, not form
-
-    def save_related(self, request, form, formsets, change):
-        # capture pre set
-        pre_doc_ids = set(form.instance.documents.values_list("id", flat=True))
-        super().save_related(request, form, formsets, change)
-
-        # keep the collection’s structural tag in sync with its name
-        from .services.tags import ensure_collection_tag, sync_structural_tags
-        ensure_collection_tag(form.instance)
-
-        # sync tags on any docs that were added/removed
-        post_doc_ids = set(form.instance.documents.values_list("id", flat=True))
-        affected_ids = pre_doc_ids | post_doc_ids
-        from .models import Document
-        for doc in Document.objects.filter(id__in=affected_ids):
-            sync_structural_tags(doc)
+# -----------------------------
+# Sections / ResourceLinks as standalone pages (hidden)
+# -----------------------------
+# Do NOT register Section/ResourceLink as top-level admin models; manage them via inlines only.
+# admin.site.register(Section, SectionAdmin)        # removed
+# admin.site.register(ResourceLink, ResourceLinkAdmin)  # removed

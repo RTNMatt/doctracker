@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import PathTrail from "../components/PathTrail";
 import { usePathTree } from "../state/PathTree";
+import { useAuth } from "../context/AuthContext"; // ⟵ added
 
 type NavItem = {
   to: string;
@@ -18,21 +19,25 @@ export default function Sidebar() {
   const { pathname } = useLocation();
   const { resetTo } = usePathTree();
 
+  // ⟵ added: real auth state from context
+  const { isAuthenticated, user, signOut } = useAuth();
+  const isSignedIn = isAuthenticated;
+  const userName = isSignedIn ? (user?.username ?? "User") : "Guest";
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const term = q.trim();
     if (term) navigate(`/search?q=${encodeURIComponent(term)}`);
   }
 
-  // Placeholder auth until wired
-  const isSignedIn = false;
-  const userName = "Guest";
-
-  function handleSignInOut() {
+  // ⟵ updated: minimal sign-in/out handlers using auth + router
+  async function handleSignInOut() {
     if (isSignedIn) {
-      console.log("Sign out clicked");
+      await signOut();
+      navigate("/login", { replace: true });
     } else {
-      navigate("/login");
+      const next = encodeURIComponent(pathname);
+      navigate(`/login?next=${next}`);
     }
   }
 

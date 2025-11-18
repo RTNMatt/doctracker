@@ -1,13 +1,1 @@
-
-
-.content-section {
-    margin-left: 280px;
-    min-height: calc(100vh - 50px);
-    padding: 20px;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: top;
-    align-items: center;
-}
-
+/*removed due to new css rules, will hold onto file until finalized*/

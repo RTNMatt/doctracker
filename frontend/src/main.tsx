@@ -1,42 +1,62 @@
+
+
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import App from "./App";
-import HomeTilesPage from "./pages/HomeTilesPage.tsx";
-import DocumentPage from "./pages/DocumentPage.tsx";
-import DepartmentPage from "./pages/DepartmentPage.tsx";
-import CollectionPage from "./pages/CollectionsPage.tsx";
-import DocumentsList from "./pages/DocumentsList";
-import DocumentRequirements from "./pages/DocumentRequirements";
-import SearchResultsPage from "./pages/SearchResultsPage.tsx";
-import DepartmentsListPage from "./pages/DepartmentsListPage.tsx";
-import CollectionsListPage from "./pages/CollectionsListPage.tsx";
 
+import { AuthProvider } from "./context/AuthContext";
+import RequireAuth, { PublicOnly } from "./components/RequireAuth";
+
+import HomeTilesPage from "./pages/HomeTilesPage";
+import DocumentsList from "./pages/DocumentsList";
+import DocumentPage from "./pages/DocumentPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
+import DepartmentsListPage from "./pages/DepartmentsListPage";
+import DepartmentPage from "./pages/DepartmentPage";
+import CollectionsListPage from "./pages/CollectionsListPage";
+import CollectionsPage from "./pages/CollectionsPage";
+import LoginPage from "./pages/LoginPage";
+import App from "./App";
+import NewDocumentPage from "./pages/NewDocumentPage";
 
 const router = createBrowserRouter([
   {
+    path: "/login",
+    element: (
+      <PublicOnly>
+        <LoginPage />
+      </PublicOnly>
+    ),
+  },
+  {
     path: "/",
-    element: <App />,
+    element: (
+      <RequireAuth>
+        <App />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <HomeTilesPage /> },
       { path: "search", element: <SearchResultsPage /> },
+
       { path: "documents", element: <DocumentsList /> },
+      { path: "documents/new", element: <NewDocumentPage /> },
       { path: "documents/:id", element: <DocumentPage /> },
-      { path: "documents/:id/requirements", element: <DocumentRequirements /> },
 
-      // NEW index pages
       { path: "departments", element: <DepartmentsListPage /> },
-      { path: "collections", element: <CollectionsListPage /> },
-
-      // existing detail pages
       { path: "departments/:slug", element: <DepartmentPage /> },
-      { path: "collections/:slug", element: <CollectionPage /> },
+
+      { path: "collections", element: <CollectionsListPage /> },
+      { path: "collections/:slug", element: <CollectionsPage /> },
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>
 );

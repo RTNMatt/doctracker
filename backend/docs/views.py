@@ -1,12 +1,13 @@
+# docs/views.py
+from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.db.models import Q
-from .services.tags import sync_structural_tags, ensure_department_tag
 
 from .models import (
     Department, Template, Document, Section, ResourceLink, Tag,
-    RequirementSnippet, Collection
+    RequirementSnippet, Collection, Tile, DocumentVersion,
 )
 from .serializers import (
     DepartmentSerializer, TemplateSerializer, DocumentSerializer,
@@ -14,107 +15,311 @@ from .serializers import (
     RequirementSnippetSerializer, RenderedRequirementsSerializer,
     CollectionSerializer
 )
+from .services.tags import sync_structural_tags, ensure_department_tag
+from .permissions import IsOrgMember, IsAdminOrEditor, IsDocumentVisible
 
 
+# -----------------------------
+# Departments
+# -----------------------------
 class DepartmentViewSet(viewsets.ModelViewSet):
-    queryset = Department.objects.all()
+    """
+    CRUD for Departments, scoped to the current organization.
+    Viewers may read; writes require Admin/Editor.
+    """
     serializer_class = DepartmentSerializer
     lookup_field = "slug"
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
+
+    def get_queryset(self):
+        org = getattr(self.request, "org", None)
+        return Department.objects.filter(org=org)
 
     def perform_create(self, serializer):
-        dept = serializer.save()
+        dept = serializer.save(org=self.request.org)
         ensure_department_tag(dept)
 
     def perform_update(self, serializer):
-        dept = serializer.save()
+        dept = serializer.save(org=self.request.org)
         ensure_department_tag(dept)
 
-    @action(detail=True, methods=["get"], url_path="documents", url_name="documents")
+    @action(
+        detail=True, methods=["get"], url_path="documents", url_name="documents",
+        permission_classes=[IsAuthenticated, IsOrgMember]
+    )
     def documents(self, request, *args, **kwargs):
-        """
-        List documents that belong to this department.
-        """
-        dept = self.get_object()
-        qs = Document.objects.filter(departments=dept).prefetch_related("tags", "sections", "links", "departments")
+        dept = self.get_object()  # already org-scoped
+        qs = (
+            Document.objects
+            .filter(org=request.org, departments=dept)
+            .prefetch_related("tags", "sections", "links", "departments")
+        )
         page = self.paginate_queryset(qs)
-        ser = DocumentSerializer(page or qs, many=True)
+        ser = DocumentSerializer(page or qs, many=True, context={"request": request})
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
 
 
+# -----------------------------
+# Templates
+# -----------------------------
 class TemplateViewSet(viewsets.ModelViewSet):
-    queryset = Template.objects.all()
     serializer_class = TemplateSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
 
-
-class TagViewSet(viewsets.ModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-
-
-class RequirementSnippetViewSet(viewsets.ModelViewSet):
-    queryset = RequirementSnippet.objects.select_related("tag").all()
-    serializer_class = RequirementSnippetSerializer
-
-
-class DocumentViewSet(viewsets.ModelViewSet):
-    queryset = Document.objects.all().prefetch_related("tags", "sections", "links", "departments")
-    serializer_class = DocumentSerializer
+    def get_queryset(self):
+        return Template.objects.filter(org=getattr(self.request, "org", None))
 
     def perform_create(self, serializer):
-        doc = serializer.save()
-        # departments/collections must be included in payload to be set here
-        sync_structural_tags(doc)
+        serializer.save(org=self.request.org)
 
     def perform_update(self, serializer):
-        doc = serializer.save()
+        serializer.save(org=self.request.org)
+
+
+# -----------------------------
+# Tags
+# -----------------------------
+class TagViewSet(viewsets.ModelViewSet):
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
+
+    def get_queryset(self):
+        return Tag.objects.filter(org=getattr(self.request, "org", None))
+
+    def perform_create(self, serializer):
+        serializer.save(org=self.request.org)
+
+    def perform_update(self, serializer):
+        serializer.save(org=self.request.org)
+
+
+# -----------------------------
+# Requirement Snippets
+# -----------------------------
+class RequirementSnippetViewSet(viewsets.ModelViewSet):
+    serializer_class = RequirementSnippetSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
+
+    def get_queryset(self):
+        return RequirementSnippet.objects.select_related("tag").filter(
+            org=getattr(self.request, "org", None)
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(org=self.request.org)
+
+    def perform_update(self, serializer):
+        serializer.save(org=self.request.org)
+
+
+# -----------------------------
+# Documents
+# -----------------------------
+class DocumentViewSet(viewsets.ModelViewSet):
+    """
+    Documents are org-scoped. Read visibility is further checked
+    per-object (everyone=True OR membership) via IsDocumentVisible.
+    Writes require Admin/Editor.
+    """
+    serializer_class = DocumentSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember, IsDocumentVisible, IsAdminOrEditor]
+
+    def get_queryset(self):
+        org = getattr(self.request, "org", None)
+        return (
+            Document.objects
+            .filter(org=org)
+            .prefetch_related("tags", "sections", "links", "departments", "collections")  # 👈 added collections
+        )
+
+    def _create_version_snapshot(self, doc: Document):
+        """
+        Persist a snapshot of the document after changes.
+        """
+        org = getattr(self.request, "org", None)
+        user = getattr(self.request, "user", None)
+        if org is None:
+            return
+
+        DocumentVersion.objects.create(
+            document=doc,
+            org=org,
+            created_by=user if getattr(user, "is_authenticated", False) else None,
+            title=doc.title,
+            status=doc.status,
+            everyone=doc.everyone,
+            tag_ids=list(doc.tags.values_list("id", flat=True)),
+            collection_ids=list(doc.collections.values_list("id", flat=True)),
+            department_ids=list(doc.departments.values_list("id", flat=True)),
+        )
+
+    def perform_create(self, serializer):
+        doc = serializer.save(org=self.request.org)
         sync_structural_tags(doc)
+        self._create_version_snapshot(doc)
+
+    def perform_update(self, serializer):
+        doc = serializer.save(org=self.request.org)
+        sync_structural_tags(doc)
+        self._create_version_snapshot(doc)
+
+    @action(detail=True, methods=["post"])
+    def set_tags(self, request, pk=None):
+        """
+        Replace this document's *manual* tags with the given IDs, and treat any
+        department-linked tags in that list as the desired departments for
+        this document.
+
+        Body: { "tag_ids": [1, 2, 3] }
+        """
+        doc = self.get_object()  # org-scoped, visibility already enforced
+        org = getattr(request, "org", None)
+
+        tag_ids = request.data.get("tag_ids", [])
+        if not isinstance(tag_ids, (list, tuple)):
+            return Response({"detail": "tag_ids must be a list"}, status=400)
+
+        # All tags in this org that match requested IDs
+        requested_qs = Tag.objects.filter(org=org, id__in=tag_ids)
+
+        # 1) Manual tags = no department/collection link
+        manual_qs = requested_qs.filter(
+            link_department__isnull=True,
+            link_collection__isnull=True,
+        )
+
+        # 2) Department tags in the request -> drive doc.departments
+        dept_tag_qs = requested_qs.filter(link_department__isnull=False)
+        dept_ids = list(
+            dept_tag_qs.values_list("link_department_id", flat=True)
+        )
+
+        if dept_ids:
+            dept_qs = Department.objects.filter(org=org, id__in=dept_ids)
+            doc.departments.set(dept_qs)
+        else:
+            # No department tags passed at all -> clear departments
+            doc.departments.clear()
+
+        # 3) Set tags = manual-only; structural tags will be re-added
+        doc.tags.set(list(manual_qs))
+
+        # 4) Ensure structural tags (dept/collection) are in sync with
+        #    doc.departments / doc.collections
+        sync_structural_tags(doc)
+
+        serializer = self.get_serializer(doc, context={"request": request})
+        return Response(serializer.data)
+
+
+    @action(detail=True, methods=["post"])
+    def set_collections(self, request, pk=None):
+        """
+        Set which collections this document belongs to.
+        Body: { "collection_ids": [1, 2, 3] }
+        """
+        doc = self.get_object()
+        org = getattr(request, "org", None)
+
+        col_ids = request.data.get("collection_ids", [])
+        if not isinstance(col_ids, (list, tuple)):
+            return Response({"detail": "collection_ids must be a list"}, status=400)
+
+        collections_qs = Collection.objects.filter(org=org, id__in=col_ids)
+        # Reverse M2M via related_name="collections"
+        doc.collections.set(collections_qs)
+
+        # 👇 ensure department/collection structural tags match membership
+        sync_structural_tags(doc)
+
+        serializer = self.get_serializer(doc, context={"request": request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
     def requirements(self, request, pk=None):
         """
         Returns only the auto-generated requirements derived from tags.
         """
-        doc = self.get_object()
-        serializer = RenderedRequirementsSerializer(doc)
+        doc = self.get_object()  # guarded by IsDocumentVisible
+        serializer = RenderedRequirementsSerializer(doc, context={"request": request})
         return Response(serializer.data)
 
 
+# -----------------------------
+# Sections (child of Document)
+# -----------------------------
 class SectionViewSet(viewsets.ModelViewSet):
-    queryset = Section.objects.select_related("document").all()
     serializer_class = SectionSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
+
+    def get_queryset(self):
+        # Sections inherit org via their parent document
+        return Section.objects.select_related("document").filter(document__org=getattr(self.request, "org", None))
+
+    def perform_create(self, serializer):
+        # No org field on Section; parent document enforces org
+        serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
+# -----------------------------
+# Resource Links (child of Document)
+# -----------------------------
 class ResourceLinkViewSet(viewsets.ModelViewSet):
-    queryset = ResourceLink.objects.select_related("document").all()
     serializer_class = ResourceLinkSerializer
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
+
+    def get_queryset(self):
+        # ResourceLinks inherit org via their parent document
+        return ResourceLink.objects.select_related("document").filter(document__org=getattr(self.request, "org", None))
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
+# -----------------------------
+# Collections (read-only)
+# -----------------------------
 class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Curated groupings of documents (e.g., 'New Hire Onboarding').
     """
-    queryset = Collection.objects.all().prefetch_related("documents", "subcollections")
     serializer_class = CollectionSerializer
     lookup_field = "slug"
     lookup_url_kwarg = "slug"
+    permission_classes = [IsAuthenticated, IsOrgMember]
+
+    def get_queryset(self):
+        org = getattr(self.request, "org", None)
+        return Collection.objects.filter(org=org).prefetch_related("documents", "subcollections")
 
     @action(detail=True, methods=["get"])
     def documents(self, request, *args, **kwargs):
-        col = self.get_object()
-        docs = col.documents.all().prefetch_related("tags", "sections", "links", "departments")
+        col = self.get_object()  # org-scoped
+        docs = col.documents.filter(org=request.org).prefetch_related(
+            "tags", "sections", "links", "departments"
+        )
         page = self.paginate_queryset(docs)
-        ser = DocumentSerializer(page or docs, many=True)
+        ser = DocumentSerializer(page or docs, many=True, context={"request": request})
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
 
     @action(detail=True, methods=["get"])
     def subcollections(self, request, *args, **kwargs):
-        col = self.get_object()
-        subs = col.subcollections.all()
+        col = self.get_object()  # org-scoped
+        subs = col.subcollections.filter(org=request.org)
         page = self.paginate_queryset(subs)
-        ser = CollectionSerializer(page or subs, many=True)
+        ser = CollectionSerializer(page or subs, many=True, context={"request": request})
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
 
 
+# -----------------------------
+# Simple endpoints
+# -----------------------------
 @api_view(["GET"])
 def health(request):
     return Response({"status": "ok", "service": "DocTracker API"})
@@ -123,29 +328,37 @@ def health(request):
 @api_view(["GET"])
 def tiles(request):
     """
-    Return active tiles in configured order.
+    Return active tiles in configured order (org-scoped).
+    Home page composition is unique per org.
     """
-    from .models import Tile
-    tiles = Tile.objects.filter(is_active=True).order_by("order", "id")
+    org = getattr(request, "org", None)
+    tiles_qs = (
+        Tile.objects
+        .filter(org=org, is_active=True)
+        .order_by("order", "id")
+        .select_related("document", "department", "collection")
+    )
 
     payload = []
-    for t in tiles:
+    for t in tiles_qs:
         base = {
             "id": t.id,
             "title": t.title,
-            "kind": t.kind,
+            # normalize "url" -> "external" to match frontend expectations
+            "kind": "external" if t.kind in ("url", "external") and t.href else t.kind,
             "description": t.description or "",
         }
-        if t.icon:
-            base["icon"] = t.icon
 
-        if t.kind == "external" and t.href:
+        if hasattr(t, "icon") and getattr(t, "icon"):
+            base["icon"] = getattr(t, "icon")
+
+        if t.kind in ("url", "external") and t.href:
             base["href"] = t.href
         elif t.kind == "document" and t.document_id:
             base["documentId"] = t.document_id
-        elif t.kind == "department" and t.department_id:
+        elif t.kind == "department" and t.department_id and t.department:
             base["departmentSlug"] = t.department.slug
-        elif t.kind == "collection" and t.collection_id:
+        elif t.kind == "collection" and t.collection_id and t.collection:
             base["collectionSlug"] = t.collection.slug
         else:
             # skip misconfigured tile
@@ -164,16 +377,16 @@ def search(request):
       - Collections (name, description)
       - Departments (name, slug)
       - Tags (name, description)
-
-    Returns a normalized list; you can group client-side by 'kind'.
+    (All org-scoped)
     """
+    org = getattr(request, "org", None)
     q = (request.GET.get("q") or "").strip()
     if not q:
         return Response({"results": []})
 
-    # --- Documents: joined query across title, sections, and links
+    # --- Documents: title, sections, links
     documents = (
-        Document.objects.filter(
+        Document.objects.filter(org=org).filter(
             Q(title__icontains=q)
             | Q(sections__body_md__icontains=q)
             | Q(links__title__icontains=q)
@@ -185,17 +398,17 @@ def search(request):
     )[:50]
 
     # --- Collections
-    collections = Collection.objects.filter(
+    collections = Collection.objects.filter(org=org).filter(
         Q(name__icontains=q) | Q(description__icontains=q)
     )[:25]
 
     # --- Departments
-    departments = Department.objects.filter(
+    departments = Department.objects.filter(org=org).filter(
         Q(name__icontains=q) | Q(slug__icontains=q)
     )[:25]
 
     # --- Tags
-    tags = Tag.objects.filter(
+    tags = Tag.objects.filter(org=org).filter(
         Q(name__icontains=q) | Q(description__icontains=q)
     )[:25]
 

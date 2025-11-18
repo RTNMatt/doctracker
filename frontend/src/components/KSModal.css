@@ -1,0 +1,107 @@
+/* src/components/KSModal.css */
+
+/* Backdrop + container */
+.ks-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ks-modal {
+  background: var(--surface, #fff);
+  padding: 16px;
+  border-radius: 8px;
+  min-width: 360px;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Header */
+.ks-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ks-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.ks-modal-close-btn {
+  border: 1px solid var(--hairline, #ddd);
+  background: var(--surface, #f7f7f9);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ks-modal-close-btn:hover {
+  background: color-mix(in oklab, var(--surface, #f7f7f9) 80%, white);
+}
+
+/* Messages */
+.ks-modal-error {
+  color: #c0392b;
+  font-size: 0.9rem;
+  margin: 4px 0 8px;
+}
+
+.ks-modal-muted {
+  font-size: 0.85rem;
+  color: var(--muted, #777);
+}
+
+/* Inputs */
+.ks-modal-search-input {
+  margin-bottom: 8px;
+  width: 100%;
+  max-width: 320px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--hairline, #ddd);
+  font-size: 0.9rem;
+}
+
+/* Chips row */
+.ks-modal-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Buttons */
+.ks-btn-primary,
+.ks-btn-secondary {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.ks-btn-primary {
+  background: var(--brand, #3a7bfa);
+  color: #fff;
+  border-color: var(--brand, #3a7bfa);
+}
+
+.ks-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.ks-btn-secondary {
+  background: var(--surface, #f7f7f9);
+  color: var(--text, #222);
+  border-color: var(--hairline, #ddd);
+}

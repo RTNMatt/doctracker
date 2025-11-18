@@ -1,0 +1,125 @@
+/* Layout + typography specific to ManageTagsModal.
+   Shared modal styles (backdrop, container, header, buttons, chips, etc.)
+   come from KSModal.css. */
+
+.manage-tags-loading {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.manage-tags-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.manage-tags-section {
+  margin-top: 8px;
+}
+
+.manage-tags-section h4 {
+  margin: 0 0 4px;
+}
+
+.manage-tags-help {
+  font-size: 0.85rem;
+  color: var(--muted, #666);
+  margin: 0 0 8px;
+}
+
+.manage-tags-subhelp {
+  font-size: 0.8rem;
+  color: var(--muted, #777);
+  margin: 0 0 6px;
+}
+
+.manage-tags-muted {
+  font-size: 0.85rem;
+  color: var(--muted, #777);
+}
+
+/* For any leftover uses of manage-tags-chips-row in the JSX,
+   style it the same as the shared ks-modal-chips-row. */
+.manage-tags-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.manage-tags-dept-section {
+  margin-top: 12px;
+}
+
+.manage-tags-category {
+  margin-bottom: 12px;
+}
+
+/* Create-mode form layout */
+.manage-tags-form {
+  display: grid;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.manage-tags-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  gap: 8px;
+}
+
+.manage-tags-field-label select {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--hairline, #ddd);
+  font-size: 0.9rem;
+}
+
+/* Inputs inside the tag form */
+.manage-tags-form input[type="text"],
+.manage-tags-form input[type="url"],
+.manage-tags-form textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--hairline, #ddd);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+/* Scrollable list for docs/departments radio options */
+.manage-tags-scroll-list {
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.manage-tags-radio-row {
+  display: block;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.manage-tags-radio-row input {
+  margin-right: 4px;
+}
+
+/* Footer actions in create mode */
+.manage-tags-create-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.manage-tags-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+

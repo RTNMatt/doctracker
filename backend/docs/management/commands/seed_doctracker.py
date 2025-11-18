@@ -1,16 +1,42 @@
 from django.core.management.base import BaseCommand
-from docs.models import Department, Template, Tag, RequirementSnippet, Document, Section, ResourceLink
+from django.contrib.auth.models import User
+from docs.models import (
+    Organization, Membership,
+    Department, Template, Tag, RequirementSnippet,
+    Document, Section, ResourceLink
+)
 
 class Command(BaseCommand):
     help = "Seed initial data for DocTracker (tags + snippets, sample doc)"
 
     def handle(self, *args, **options):
+        # Org + admin
+        org, _ = Organization.objects.get_or_create(
+            slug="default",
+            defaults={"name": "Default Org"}
+        )
+
+        user, created = User.objects.get_or_create(
+            username="admin",
+            defaults={"email": "admin@example.com"}
+        )
+        if created:
+            user.set_password("admin123")
+            user.save()
+
+        Membership.objects.get_or_create(
+            org=org,
+            user=user,
+            defaults={"role": "admin"}
+        )
+
         # Departments
-        dep_net, _ = Department.objects.get_or_create(name="Network")
-        dep_support, _ = Department.objects.get_or_create(name="Support")
+        dep_net, _ = Department.objects.get_or_create(org=org, slug="network", defaults={"name": "Network"})
+        dep_support, _ = Department.objects.get_or_create(org=org, slug="support", defaults={"name": "Support"})
 
         # Template
         tpl, _ = Template.objects.get_or_create(
+            org=org,
             name="Default",
             defaults={
                 "font_family": "Inter, Segoe UI, Roboto, Arial, sans-serif",
@@ -25,8 +51,14 @@ class Command(BaseCommand):
         )
 
         # Tags + snippets
-        tag_cpbx, _ = Tag.objects.get_or_create(name="cPBX", defaults={"description": "Cloud PBX related"})
+        tag_cpbx, _ = Tag.objects.get_or_create(
+            org=org,
+            name="cPBX",
+            defaults={"description": "Cloud PBX related"}
+        )
+
         RequirementSnippet.objects.get_or_create(
+            org=org,
             tag=tag_cpbx,
             title="Cloud PBX Access",
             defaults={
@@ -42,17 +74,38 @@ class Command(BaseCommand):
         )
 
         # Sample doc
-        doc = Document.objects.create(
+        doc, _ = Document.objects.get_or_create(
+            org=org,
             title="Sample: User Provisioning",
-            template=tpl,
-            everyone=False,
-            status="draft",
+            defaults={
+                "template": tpl,
+                "everyone": False,
+                "status": "draft",
+            },
         )
+
         doc.departments.set([dep_support])
         doc.tags.set([tag_cpbx])
 
-        Section.objects.create(document=doc, order=0, header="Overview", body_md="Purpose and scope.")
-        Section.objects.create(document=doc, order=1, header="Procedure", body_md="1. Step one\n2. Step two")
-        ResourceLink.objects.create(document=doc, order=0, title="Internal Handbook", url="https://example.com/handbook")
+        # Sections (inherit org through doc)
+        Section.objects.get_or_create(
+            document=doc,
+            header="Overview",
+            defaults={"body_md": "Purpose and scope."}
+        )
 
-        self.stdout.write(self.style.SUCCESS("Seed complete."))
+        Section.objects.get_or_create(
+            document=doc,
+            header="Procedure",
+            defaults={"body_md": "1. Step one\n2. Step two"}
+        )
+
+        # Links (inherit org through doc)
+        ResourceLink.objects.get_or_create(
+            document=doc,
+            title="Internal Handbook",
+            url="https://example.com/handbook",
+            defaults={"note": ""}
+        )
+
+        self.stdout.write(self.style.SUCCESS("Seed complete. Login: admin/admin123 (org: default)"))

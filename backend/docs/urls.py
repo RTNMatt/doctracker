@@ -1,25 +1,39 @@
+# docs/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+#from .auth_views import LoginView, LogoutView, MeView, RefreshView
+
 from .views import (
-    DepartmentViewSet, TemplateViewSet, TagViewSet,
-    RequirementSnippetViewSet, DocumentViewSet,
-    SectionViewSet, ResourceLinkViewSet,
-    CollectionViewSet, tiles, health, search
+    DepartmentViewSet, TemplateViewSet, TagViewSet, RequirementSnippetViewSet,
+    DocumentViewSet, SectionViewSet, ResourceLinkViewSet,
+    CollectionViewSet,
+    health, tiles, search
 )
 
+# NEW: import auth views
+from .auth import LoginView, LogoutView, MeView, RefreshView
+
 router = DefaultRouter()
-router.register(r"departments", DepartmentViewSet)
-router.register(r"templates", TemplateViewSet)
-router.register(r"tags", TagViewSet)
-router.register(r"snippets", RequirementSnippetViewSet)
-router.register(r"documents", DocumentViewSet)
-router.register(r"sections", SectionViewSet)
-router.register(r"links", ResourceLinkViewSet)
-router.register(r"collections", CollectionViewSet, basename="collections")
+
+# Explicit basenames because our viewsets don't define .queryset
+router.register(r"departments", DepartmentViewSet, basename="department")
+router.register(r"templates", TemplateViewSet, basename="template")
+router.register(r"tags", TagViewSet, basename="tag")
+router.register(r"snippets", RequirementSnippetViewSet, basename="snippet")
+router.register(r"documents", DocumentViewSet, basename="document")
+router.register(r"sections", SectionViewSet, basename="section")
+router.register(r"links", ResourceLinkViewSet, basename="resourcelink")
+router.register(r"collections", CollectionViewSet, basename="collection")
 
 urlpatterns = [
+    path("", include(router.urls)),
     path("health/", health, name="health"),
     path("tiles/", tiles, name="tiles"),
     path("search/", search, name="search"),
-    path("", include(router.urls)),
+
+    # NEW: auth endpoints (added, not replacing anything)
+    path("auth/login/", LoginView.as_view(), name="auth-login"),
+    path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
+    path("auth/me/", MeView.as_view(), name="auth-me"),
+    path("auth/refresh/", RefreshView.as_view(), name="auth-refresh"),
 ]

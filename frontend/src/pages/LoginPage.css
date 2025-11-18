@@ -1,0 +1,111 @@
+/* Page background & centering */
+.login-wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--content-bg, #f7f8fa);
+  padding: 16px;
+}
+
+/* Card */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid var(--sidebar-edge, #e6e8eb);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  padding: 20px;
+}
+
+/* Header */
+.login-header {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.login-logo-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--brand, #3a7bfa);
+  margin-bottom: 2px;
+}
+
+.login-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--sidebar-text, #0f172a);
+}
+
+.login-subtitle {
+  margin: 0;
+  color: var(--muted, #6b7280);
+  font-size: 13px;
+}
+
+/* Errors */
+.login-error {
+  background: #fff1f1;
+  color: #9f1d1d;
+  border: 1px solid #f3c1c1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+/* Form */
+.login-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.login-label {
+  display: grid;
+  gap: 6px;
+  color: var(--sidebar-text, #0f172a);
+  font-size: 13px;
+}
+
+/* Inputs */
+.login-input {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--sidebar-edge, #e6e8eb);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  color: var(--sidebar-text, #0f172a);
+}
+
+.login-input:focus {
+  border-color: color-mix(in oklab, var(--brand, #3a7bfa) 40%, #e6e8eb);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand, #3a7bfa) 20%, transparent);
+}
+
+/* Submit */
+.login-button {
+  height: 40px;
+  border: 1px solid var(--brand, #3a7bfa);
+  background: var(--brand, #3a7bfa);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.02s ease-in-out, opacity 0.15s ease-in-out;
+}
+
+.login-button[disabled] {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.login-button:active {
+  transform: translateY(1px);
+}
