@@ -7,12 +7,15 @@
   align-self: start;
   height: 100dvh;
 
+  width: 280px;      /* add this */
+  flex-shrink: 0;    /* and this, for safety in flex/grid contexts */
+
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-edge);
   display: flex;
   flex-direction: column;
   color: var(--sidebar-text);
-  overflow: hidden; /* inner areas manage their own scroll */
+  overflow: hidden;
 }
 
 /* Logo */
@@ -108,6 +111,10 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+
+  /*Stop from expanding right*/
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Empty spacer occupies the 5th grid row (0.3fr) */
@@ -127,6 +134,10 @@
   min-height: 0;
   overflow: auto;      /* scroll when long */
   padding-right: 2px;  /* avoid scrollbar overlaying chips */
+
+  /*Stop from expanding right*/
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Each node row is a fixed height + supports indentation */
@@ -138,6 +149,10 @@
 
   /* indentation: each level pushes to the right by --pt-indent-step */
   padding-left: calc(var(--pt-indent-step) * var(--i, 0));
+
+  /*Stop from expanding right*/
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 /* Active/focus ring is inset so it won't be clipped by overflow */
@@ -156,6 +171,9 @@
   text-align: left;
   transition: background .12s ease, transform .12s ease, box-shadow .12s ease, border-color .12s ease;
   box-shadow: none;
+  /*Stop from expanding right*/
+  max-width: 100%;
+  min-width: 0;
 }
 .pt-chip:hover {
   background: color-mix(in oklab, var(--surface) 80%, white);
@@ -188,11 +206,11 @@
 .pt-dot.kind-home       { background: var(--surface); border-color: var(--surface-border); }
 
 .pt-label {
-  font-size: 0.9rem;
-  line-height: 1.2;
-  white-space: nowrap;
+  display: inline-block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Indentation levels (1–12) ----------

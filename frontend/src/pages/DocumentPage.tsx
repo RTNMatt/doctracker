@@ -1,4 +1,3 @@
-// src/pages/DocumentPage.tsx
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import type { FormEvent } from "react";
@@ -23,29 +22,50 @@ type RawTag = {
 };
 
 type TagKind = "department" | "collection" | "document" | "external" | "none";
+
 type NormalizedTag = RawTag & {
   target_kind: TagKind;
   target_value: { slug?: string; id?: number; url?: string };
 };
 
+type InfoKey = "visibility" | "collections" | "tags";
+
+type LightboxImage = {
+  src: string;
+  alt: string;
+};
+
 function normalizeTag(t: RawTag): NormalizedTag {
   if (t.target_kind && t.target_value) return t as NormalizedTag;
-  if (t.link_department)
-    return { ...t, target_kind: "department", target_value: { slug: t.slug } };
-  if (t.link_collection)
-    return { ...t, target_kind: "collection", target_value: { slug: t.slug } };
-  if (t.link_document)
+
+  if (t.link_department) {
+    return {
+      ...t,
+      target_kind: "department",
+      target_value: { slug: t.slug },
+    };
+  }
+  if (t.link_collection) {
+    return {
+      ...t,
+      target_kind: "collection",
+      target_value: { slug: t.slug },
+    };
+  }
+  if (t.link_document) {
     return {
       ...t,
       target_kind: "document",
       target_value: { id: t.link_document },
     };
-  if (t.link_url)
+  }
+  if (t.link_url) {
     return {
       ...t,
       target_kind: "external",
       target_value: { url: t.link_url ?? undefined },
     };
+  }
   return { ...t, target_kind: "none", target_value: {} };
 }
 
@@ -136,6 +156,18 @@ export default function DocumentPage() {
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
 
+  // sidebar tag collapse
+  const [areTagsOpen, setAreTagsOpen] = useState(true);
+
+  // info bubbles for sidebar headings
+  const [activeInfo, setActiveInfo] = useState<InfoKey | null>(null);
+  const [lockedInfo, setLockedInfo] = useState<InfoKey | null>(null);
+
+  // lightbox for section images
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(
+    null
+  );
+
   // ----- LOAD DOCUMENT -----
   const loadDoc = async () => {
     if (!id) return;
@@ -145,7 +177,6 @@ export default function DocumentPage() {
       const data = res.data;
       setDoc(data);
 
-      // only set the initial snapshot the first time; later, Save document updates it
       if (!initialDocSnapshot) {
         setInitialDocSnapshot(data);
       }
@@ -193,7 +224,7 @@ export default function DocumentPage() {
     }
   }, [doc, initialDocSnapshot]);
 
-  // Warn on full page unload (refresh, close tab, navigate URL) if unsaved changes
+  // Warn on full page unload if unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!editMode || !hasDocUnsavedChanges) return;
@@ -207,6 +238,24 @@ export default function DocumentPage() {
     };
   }, [editMode, hasDocUnsavedChanges]);
 
+  // Close locked info popovers when clicking outside
+  useEffect(() => {
+    if (!lockedInfo) return;
+
+    const handleDocClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest(".doc-info-bubble")) {
+        setLockedInfo(null);
+        setActiveInfo(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocClick);
+    return () => {
+      document.removeEventListener("mousedown", handleDocClick);
+    };
+  }, [lockedInfo]);
+
   const handleSaveDocument = async () => {
     if (!doc?.id) return;
 
@@ -214,7 +263,6 @@ export default function DocumentPage() {
       setDocSaving(true);
       setDocError(null);
 
-      // Enforce: if everyone=false, doc must belong to at least one department.
       const deptCount = Array.isArray(doc.departments)
         ? doc.departments.length
         : 0;
@@ -227,7 +275,6 @@ export default function DocumentPage() {
         return;
       }
 
-      // For now we only PATCH top-level metadata.
       const payload: any = {
         title: doc.title,
         status: doc.status,
@@ -236,7 +283,7 @@ export default function DocumentPage() {
 
       const res = await api.patch(`/documents/${doc.id}/`, payload);
       setDoc(res.data);
-      setInitialDocSnapshot(res.data); // new "clean" baseline
+      setInitialDocSnapshot(res.data);
     } catch (e: any) {
       setDocError(e?.message ?? "Failed to save document");
     } finally {
@@ -385,421 +432,653 @@ export default function DocumentPage() {
   };
 
   if (loading) return <p>Loading...</p>;
-  if (err) return <p style={{ color: "red" }}>{err}</p>; // leaving this one simple
+  if (err) return <p style={{ color: "red" }}>{err}</p>;
   if (!doc) return null;
 
-  const collectionCount = Array.isArray(doc.collections)
-    ? doc.collections.length
-    : 0;
+  const hasAnyTags =
+    grouped.deptsOrCols.length ||
+    grouped.docLinks.length ||
+    grouped.externals.length;
 
   return (
     <div className="document-page">
-      <header className="document-header">
-        <div className="document-header-main">
-          <div>
+      <div className="document-grid">
+        {/* HEADER: title + status centered across all 4 columns */}
+        <header className="document-header document-grid-full">
+          <div className="document-header-main">
             <h1 className="document-title">{doc.title}</h1>
             {doc.status && (
-              <span className={`document-status document-status--${doc.status}`}>
+              <span
+                className={`document-status document-status--${doc.status}`}
+              >
                 {doc.status}
               </span>
             )}
           </div>
+        </header>
 
-          {canEdit && (
-            <div className="document-header-actions">
-              {editMode && (
-                <button
-                  type="button"
-                  className="document-save-btn"
-                  onClick={handleSaveDocument}
-                  disabled={!hasDocUnsavedChanges || docSaving}
-                >
-                  {docSaving ? "Saving…" : "Save document"}
-                </button>
-              )}
-              <button
-                type="button"
-                className="document-edit-toggle"
-                onClick={async () => {
-                  if (editMode && hasDocUnsavedChanges) {
-                    const ok = window.confirm(
-                      "You have unsaved changes to this document. Discard them?"
-                    );
-                    if (!ok) {
-                      return;
-                    }
-                    setInitialDocSnapshot(null);
-                    await loadDoc();
-                  }
-
-                  setEditMode((m) => !m);
-                  setEditingSectionId(null);
-                  setEditingLinkId(null);
-                  setSectionError(null);
-                  setLinkError(null);
-                  setEditSectionImage(null);
-                  setNewSectionImage(null);
-                }}
-              >
-                {editMode ? "Done editing" : "Edit document"}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="document-header-meta">
-          {collectionCount > 0 && (
-            <span className="document-collections-pill">
-              In {collectionCount} collection
-              {collectionCount === 1 ? "" : "s"}
-            </span>
-          )}
-        </div>
-      </header>
-
-      {docError && <p className="document-error">{docError}</p>}
-
-      {/* VISIBILITY / META EDIT (everyone toggle) */}
-      {editMode && canEdit && (
-        <section className="doc-meta-edit">
-          <h3>Document visibility</h3>
-          <div className="doc-visibility-block">
-            <label className="doc-toggle-line">
-              <input
-                type="checkbox"
-                checked={!!doc.everyone}
-                onChange={(e) =>
-                  setDoc((prev: any) =>
-                    prev ? { ...prev, everyone: e.target.checked } : prev
-                  )
-                }
-              />
-              <span>Visible to everyone in this organization</span>
-            </label>
-
-            {!doc.everyone && (
-              <p className="doc-visibility-note">
-                Restricted: this document will only be visible to members of its
-                departments. It must belong to at least one department (via
-                department tags).
-              </p>
-            )}
+        {/* DOC ERROR (if save failed) */}
+        {docError && (
+          <div className="document-grid-full">
+            <p className="document-error">{docError}</p>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* TAG BAR (VIEW) */}
-      {!!(
-        grouped.deptsOrCols.length ||
-        grouped.docLinks.length ||
-        grouped.externals.length
-      ) && (
-        <div className="doc-tagbar">
-          {!!grouped.deptsOrCols.length && (
-            <div className="tag-group">
-              <div className="tag-group-label">Related Areas</div>
-              <div className="tag-chips">
-                {grouped.deptsOrCols.map((t) => (
-                  <button
-                    key={t.id}
-                    className={`tag-chip ${
-                      t.target_kind === "department" ? "is-dept" : "is-col"
-                    }`}
-                    onClick={() => openTag(t)}
-                    title={t.description || t.name}
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* LEFT COLUMN: tags + visibility + collections */}
+        <aside className="document-left-column">
+          {/* TAGS PANEL (collapsible) */}
+          <div className="doc-sidebar-panel">
+            <button
+              type="button"
+              className="doc-sidebar-toggle"
+              onClick={() => setAreTagsOpen((open: boolean) => !open)}
+              disabled={!hasAnyTags}
+            >
+              <span className="doc-sidebar-title">Tags</span>
+              <span className="doc-sidebar-toggle-indicator">
+                {!hasAnyTags ? "No tags yet" : areTagsOpen ? "Hide" : "Show"}
+              </span>
+            </button>
 
-          {!!grouped.docLinks.length && (
-            <div className="tag-group">
-              <div className="tag-group-label">Related Docs</div>
-              <div className="tag-chips">
-                {grouped.docLinks.map((t) => (
-                  <button
-                    key={t.id}
-                    className="tag-chip is-doc"
-                    onClick={() => openTag(t)}
-                    title={t.description || t.name}
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!!grouped.externals.length && (
-            <div className="tag-group">
-              <div className="tag-group-label">External</div>
-              <div className="tag-chips">
-                {grouped.externals.map((t) => (
-                  <button
-                    key={t.id}
-                    className="tag-chip is-ext"
-                    onClick={() => openTag(t)}
-                    title={t.description || t.name}
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAG & COLLECTION EDIT SECTIONS */}
-      {editMode && canEdit && (
-        <section className="doc-tags-edit">
-          <h3>Tags</h3>
-          <p className="doc-tags-text">
-            Tags always link somewhere (document, department, collection, or URL).
-            Structural tags from departments/collections are auto-applied and
-            can't be removed here.{" "}
-            <strong>
-              Changes to tags are saved immediately and do not depend on the
-              “Save document” button.
-            </strong>
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setIsTagModalOpen(true);
-            }}
-          >
-            Manage tags…
-          </button>
-
-          <hr className="doc-separator" />
-
-          <h3>Collections</h3>
-          <p className="doc-tags-text">
-            Collections group documents into curated sets. Use the collections
-            manager to add this document to existing collections or create new
-            ones.{" "}
-            <strong>Changes to collections are saved immediately.</strong>
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setIsCollectionsModalOpen(true);
-            }}
-          >
-            Manage collections…
-          </button>
-        </section>
-      )}
-
-      {/* RELEVANT LINKS (VIEW & EDIT) */}
-      {!!doc.links?.length && (
-        <>
-          <h3>Relevant Links</h3>
-          <ul className="doc-links">
-            {doc.links.map((l: any) => (
-              <li key={l.id}>
-                {editMode && canEdit && editingLinkId === l.id ? (
-                  <form onSubmit={handleUpdateLink} className="doc-link-edit-form">
-                    <div className="doc-link-edit-grid">
-                      <input
-                        type="text"
-                        placeholder="Title"
-                        value={editLinkTitle}
-                        onChange={(e) => setEditLinkTitle(e.target.value)}
-                      />
-                      <input
-                        type="url"
-                        placeholder="https://example.com"
-                        value={editLinkUrl}
-                        onChange={(e) => setEditLinkUrl(e.target.value)}
-                      />
-                      <textarea
-                        placeholder="Note"
-                        value={editLinkNote}
-                        onChange={(e) => setEditLinkNote(e.target.value)}
-                        rows={2}
-                      />
-                      <div className="doc-inline-buttons">
-                        <button type="submit" disabled={linkSaving}>
-                          {linkSaving ? "Saving..." : "Save"}
-                        </button>
-                        <button type="button" onClick={cancelEditLink}>
-                          Cancel
-                        </button>
+            {areTagsOpen && hasAnyTags && (
+              <div className="doc-sidebar-body">
+                <div className="doc-tagbar">
+                  {!!grouped.deptsOrCols.length && (
+                    <div className="tag-group">
+                      <div className="tag-group-label">Related Areas</div>
+                      <div className="tag-chips">
+                        {grouped.deptsOrCols.map((t) => (
+                          <button
+                            key={t.id}
+                            className={`tag-chip ${
+                              t.target_kind === "department"
+                                ? "is-dept"
+                                : "is-col"
+                            }`}
+                            onClick={() => openTag(t)}
+                            title={t.description || t.name}
+                          >
+                            {t.name}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  </form>
-                ) : (
-                  <>
-                    <a href={l.url} target="_blank" rel="noreferrer">
-                      {l.title}
-                    </a>
-                    {l.note ? ` — ${l.note}` : ""}
-                    {editMode && canEdit && (
-                      <button
-                        type="button"
-                        className="doc-inline-edit-btn"
-                        onClick={() => startEditLink(l)}
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                  )}
 
-      {editMode && canEdit && (
-        <div className="doc-links-add-block">
-          <h4>Add Link</h4>
-          {linkError && <p className="doc-error-text">{linkError}</p>}
-          <form onSubmit={handleCreateLink} className="doc-link-add-form">
-            <input
-              type="text"
-              placeholder="Title"
-              value={newLinkTitle}
-              onChange={(e) => setNewLinkTitle(e.target.value)}
-            />
-            <input
-              type="url"
-              placeholder="https://example.com"
-              value={newLinkUrl}
-              onChange={(e) => setNewLinkUrl(e.target.value)}
-            />
-            <textarea
-              placeholder="Optional note"
-              value={newLinkNote}
-              onChange={(e) => setNewLinkNote(e.target.value)}
-              rows={2}
-            />
-            <button type="submit" disabled={linkSaving}>
-              {linkSaving ? "Saving..." : "Add link"}
-            </button>
-          </form>
-        </div>
-      )}
+                  {!!grouped.docLinks.length && (
+                    <div className="tag-group">
+                      <div className="tag-group-label">Related Docs</div>
+                      <div className="tag-chips">
+                        {grouped.docLinks.map((t) => (
+                          <button
+                            key={t.id}
+                            className="tag-chip is-doc"
+                            onClick={() => openTag(t)}
+                            title={t.description || t.name}
+                          >
+                            {t.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-      {/* SECTIONS */}
-      {doc.sections?.map((s: any) => (
-        <section className="doc-contents" key={s.id}>
-          <div className="doc-left">
-            {editMode && canEdit && editingSectionId === s.id ? (
-              <form
-                onSubmit={handleUpdateSection}
-                className="doc-section-edit-form"
-              >
-                <input
-                  type="text"
-                  placeholder="Section header"
-                  value={editSectionHeader}
-                  onChange={(e) => setEditSectionHeader(e.target.value)}
-                />
-                <textarea
-                  placeholder="Section body (markdown/plain)"
-                  value={editSectionBody}
-                  onChange={(e) => setEditSectionBody(e.target.value)}
-                  rows={6}
-                />
-                <label className="doc-image-label">
-                  Image (optional)
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      setEditSectionImage(e.target.files?.[0] ?? null)
-                    }
-                  />
-                </label>
-                {sectionError && <p className="doc-error-text">{sectionError}</p>}
-                <div className="doc-inline-buttons">
-                  <button type="submit" disabled={sectionSaving}>
-                    {sectionSaving ? "Saving..." : "Save section"}
-                  </button>
-                  <button type="button" onClick={cancelEditSection}>
-                    Cancel
+                  {!!grouped.externals.length && (
+                    <div className="tag-group">
+                      <div className="tag-group-label">External</div>
+                      <div className="tag-chips">
+                        {grouped.externals.map((t) => (
+                          <button
+                            key={t.id}
+                            className="tag-chip is-ext"
+                            onClick={() => openTag(t)}
+                            title={t.description || t.name}
+                          >
+                            {t.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {editMode && canEdit && (
+              <>
+                <div className="doc-sidebar-manage-block">
+                  <button
+                    type="button"
+                    className="doc-sidebar-primary-button ks-btn-primary"
+                    onClick={() => {
+                      setIsTagModalOpen(true);
+                    }}
+                  >
+                    Manage tags…
                   </button>
                 </div>
-              </form>
-            ) : (
-              <>
-                <h3 className="doc-section-title">
-                  {s.header}
-                  {editMode && canEdit && (
-                    <button
-                      type="button"
-                      className="doc-inline-edit-btn"
-                      onClick={() => startEditSection(s)}
-                    >
-                      Edit
-                    </button>
+
+                {/* TAGS HELP BUBBLE (bottom-right) */}
+                <div
+                  className="doc-info-bubble"
+                  onMouseEnter={() => {
+                    if (!lockedInfo) setActiveInfo("tags");
+                  }}
+                  onMouseLeave={() => {
+                    if (!lockedInfo) setActiveInfo(null);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLockedInfo((current: InfoKey | null) =>
+                      current === "tags" ? null : "tags"
+                    );
+                    setActiveInfo((current: InfoKey | null) =>
+                      current === "tags" ? null : "tags"
+                    );
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={
+                      "doc-info-icon" +
+                      (lockedInfo === "tags" ? " doc-info-icon--active" : "")
+                    }
+                    aria-label="Tags help"
+                  >
+                    ?
+                  </button>
+                  {(activeInfo === "tags" || lockedInfo === "tags") && (
+                    <div className="doc-info-popover">
+                      <p>
+                        Tags always link somewhere: a department, a collection,
+                        another document, or an external URL.
+                      </p>
+                      <p>
+                        Department and collection tags are structural — they’re
+                        applied automatically from those objects and can’t be
+                        removed directly here.
+                      </p>
+                      <p>
+                        Changes in the tag manager are saved immediately and do
+                        not depend on “Save document”.
+                      </p>
+                    </div>
                   )}
-                </h3>
-                <pre className="doc-section-pre">{s.body_md}</pre>
+                </div>
               </>
             )}
           </div>
-          <div className="doc-right">
-            {s.image ? (
-              <div className="doc-section-image-wrapper">
-                <img
-                  className="doc-sec-img"
-                  src={s.image}
-                  alt={s.header || "section image"}
-                />
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ))}
 
-      {editMode && canEdit && (
-        <section className="doc-contents doc-add-section-block">
-          <div className="doc-left">
-            <h3>Add Section</h3>
-            {sectionError && !editingSectionId && (
-              <p className="doc-error-text">{sectionError}</p>
-            )}
-            <form
-              onSubmit={handleCreateSection}
-              className="doc-section-add-form"
-            >
-              <input
-                type="text"
-                placeholder="Section header"
-                value={newSectionHeader}
-                onChange={(e) => setNewSectionHeader(e.target.value)}
-              />
-              <textarea
-                placeholder="Section body (markdown/plain)"
-                value={newSectionBody}
-                onChange={(e) => setNewSectionBody(e.target.value)}
-                rows={6}
-              />
-              <label className="doc-image-label">
-                Image (optional)
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    setNewSectionImage(e.target.files?.[0] ?? null)
-                  }
-                />
-              </label>
-              <button type="submit" disabled={sectionSaving}>
-                {sectionSaving ? "Saving..." : "Add section"}
-              </button>
-            </form>
+          {/* VISIBILITY (edit mode only) */}
+          {editMode && canEdit && (
+            <>
+              <section className="doc-sidebar-section">
+                <div className="doc-sidebar-heading-row">
+                  <h3 className="doc-sidebar-heading">Visibility</h3>
+                </div>
+
+                <div className="doc-visibility-block">
+                  <label className="doc-toggle-line">
+                    <input
+                      type="checkbox"
+                      checked={!!doc.everyone}
+                      onChange={(e) =>
+                        setDoc((prev: any) =>
+                          prev
+                            ? { ...prev, everyone: e.target.checked }
+                            : prev
+                        )
+                      }
+                    />
+                    <span>Visible to everyone in this organization</span>
+                  </label>
+
+                  {!doc.everyone && (
+                    <p className="doc-visibility-note">
+                      Restricted visibility — see the (?) for details.
+                    </p>
+                  )}
+                </div>
+
+                {/* VISIBILITY HELP BUBBLE (bottom-right) */}
+                <div
+                  className="doc-info-bubble"
+                  onMouseEnter={() => {
+                    if (!lockedInfo) setActiveInfo("visibility");
+                  }}
+                  onMouseLeave={() => {
+                    if (!lockedInfo) setActiveInfo(null);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLockedInfo((current: InfoKey | null) =>
+                      current === "visibility" ? null : "visibility"
+                    );
+                    setActiveInfo((current: InfoKey | null) =>
+                      current === "visibility" ? null : "visibility"
+                    );
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={
+                      "doc-info-icon" +
+                      (lockedInfo === "visibility"
+                        ? " doc-info-icon--active"
+                        : "")
+                    }
+                    aria-label="Visibility help"
+                  >
+                    ?
+                  </button>
+                  {(activeInfo === "visibility" ||
+                    lockedInfo === "visibility") && (
+                    <div className="doc-info-popover">
+                      <p>
+                        Visibility controls whether this document is visible to
+                        everyone in the organization or only to members of its
+                        departments.
+                      </p>
+                      <p>
+                        When visibility is restricted, the document must belong
+                        to at least one department via its department tags.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* COLLECTIONS (edit mode only) */}
+              <section className="doc-sidebar-section">
+                <div className="doc-sidebar-heading-row">
+                  <h3 className="doc-sidebar-heading">Collections</h3>
+                </div>
+
+                <button
+                  type="button"
+                  className="doc-sidebar-primary-button ks-btn-primary"
+                  onClick={() => {
+                    setIsCollectionsModalOpen(true);
+                  }}
+                >
+                  Manage collections…
+                </button>
+
+                {/* COLLECTIONS HELP BUBBLE (bottom-right) */}
+                <div
+                  className="doc-info-bubble"
+                  onMouseEnter={() => {
+                    if (!lockedInfo) setActiveInfo("collections");
+                  }}
+                  onMouseLeave={() => {
+                    if (!lockedInfo) setActiveInfo(null);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLockedInfo((current: InfoKey | null) =>
+                      current === "collections" ? null : "collections"
+                    );
+                    setActiveInfo((current: InfoKey | null) =>
+                      current === "collections" ? null : "collections"
+                    );
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={
+                      "doc-info-icon" +
+                      (lockedInfo === "collections"
+                        ? " doc-info-icon--active"
+                        : "")
+                    }
+                    aria-label="Collections help"
+                  >
+                    ?
+                  </button>
+                  {(activeInfo === "collections" ||
+                    lockedInfo === "collections") && (
+                    <div className="doc-info-popover">
+                      <p>
+                        Collections group documents into curated sets, such as
+                        “Onboarding” or “Runbooks”.
+                      </p>
+                      <p>
+                        Use the manager to add this document to existing
+                        collections or create new ones. Changes to collections
+                        are saved immediately and do not depend on “Save
+                        document”.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+        </aside>
+
+        {/* CENTER TWO COLUMNS: “paper” with links + sections */}
+        <main className="document-main">
+          <div className="doc-paper">
+            <div className="doc-paper-inner">
+              {/* RELEVANT LINKS (VIEW & EDIT) */}
+              {!!doc.links?.length && (
+                <>
+                  <h3 className="doc-paper-subtitle">Relevant Links</h3>
+                  <ul className="doc-links">
+                    {doc.links.map((l: any) => (
+                      <li key={l.id}>
+                        {editMode && canEdit && editingLinkId === l.id ? (
+                          <form
+                            onSubmit={handleUpdateLink}
+                            className="doc-link-edit-form"
+                          >
+                            <div className="doc-link-edit-grid">
+                              <input
+                                type="text"
+                                placeholder="Title"
+                                value={editLinkTitle}
+                                onChange={(e) =>
+                                  setEditLinkTitle(e.target.value)
+                                }
+                              />
+                              <input
+                                type="url"
+                                placeholder="https://example.com"
+                                value={editLinkUrl}
+                                onChange={(e) =>
+                                  setEditLinkUrl(e.target.value)
+                                }
+                              />
+                              <textarea
+                                placeholder="Note"
+                                value={editLinkNote}
+                                onChange={(e) =>
+                                  setEditLinkNote(e.target.value)
+                                }
+                                rows={2}
+                              />
+                              <div className="doc-inline-buttons">
+                                <button
+                                  type="submit"
+                                  className="ks-btn-primary"
+                                  disabled={linkSaving}
+                                >
+                                  {linkSaving ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ks-btn-secondary"
+                                  onClick={cancelEditLink}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <a href={l.url} target="_blank" rel="noreferrer">
+                              {l.title}
+                            </a>
+                            {l.note ? ` — ${l.note}` : ""}
+                            {editMode && canEdit && (
+                              <button
+                                type="button"
+                                className="doc-inline-edit-btn"
+                                onClick={() => startEditLink(l)}
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {editMode && canEdit && (
+                <div className="doc-links-add-block">
+                  <h4>Add Link</h4>
+                  {linkError && (
+                    <p className="doc-error-text">{linkError}</p>
+                  )}
+                  <form
+                    onSubmit={handleCreateLink}
+                    className="doc-link-add-form"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Title"
+                      value={newLinkTitle}
+                      onChange={(e) => setNewLinkTitle(e.target.value)}
+                    />
+                    <input
+                      type="url"
+                      placeholder="https://example.com"
+                      value={newLinkUrl}
+                      onChange={(e) => setNewLinkUrl(e.target.value)}
+                    />
+                    <textarea
+                      placeholder="Optional note"
+                      value={newLinkNote}
+                      onChange={(e) => setNewLinkNote(e.target.value)}
+                      rows={2}
+                    />
+                    <button
+                      type="submit"
+                      className="ks-btn-primary"
+                      disabled={linkSaving}
+                    >
+                      {linkSaving ? "Saving..." : "Add link"}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* SECTIONS: headers/body on left, images on right */}
+              {doc.sections?.map((s: any) => (
+                <section className="doc-contents" key={s.id}>
+                  <div className="doc-left">
+                    {editMode && canEdit && editingSectionId === s.id ? (
+                      <form
+                        onSubmit={handleUpdateSection}
+                        className="doc-section-edit-form"
+                      >
+                        <input
+                          type="text"
+                          placeholder="Section header"
+                          value={editSectionHeader}
+                          onChange={(e) =>
+                            setEditSectionHeader(e.target.value)
+                          }
+                        />
+                        <textarea
+                          placeholder="Section body (markdown/plain)"
+                          value={editSectionBody}
+                          onChange={(e) =>
+                            setEditSectionBody(e.target.value)
+                          }
+                          rows={6}
+                        />
+                        <label className="doc-image-label">
+                          Image (optional)
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              setEditSectionImage(e.target.files?.[0] ?? null)
+                            }
+                          />
+                        </label>
+                        {sectionError && (
+                          <p className="doc-error-text">{sectionError}</p>
+                        )}
+                        <div className="doc-inline-buttons">
+                          <button
+                            type="submit"
+                            className="ks-btn-primary"
+                            disabled={sectionSaving}
+                          >
+                            {sectionSaving ? "Saving..." : "Save section"}
+                          </button>
+                          <button
+                            type="button"
+                            className="ks-btn-secondary"
+                            onClick={cancelEditSection}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <h3 className="doc-section-title">
+                          {s.header}
+                          {editMode && canEdit && (
+                            <button
+                              type="button"
+                              className="doc-inline-edit-btn"
+                              onClick={() => startEditSection(s)}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </h3>
+                        <pre className="doc-section-pre">{s.body_md}</pre>
+                      </>
+                    )}
+                  </div>
+                  <div className="doc-right">
+                    {s.image ? (
+                      <div className="doc-section-image-wrapper">
+                        <img
+                          className="doc-sec-img"
+                          src={s.image}
+                          alt={s.header || "section image"}
+                          onClick={() =>
+                            setLightboxImage({
+                              src: s.image,
+                              alt: s.header || "section image",
+                            })
+                          }
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
+              ))}
+
+              {editMode && canEdit && (
+                <section className="doc-contents doc-add-section-block">
+                  <div className="doc-left">
+                    <h3>Add Section</h3>
+                    {sectionError && !editingSectionId && (
+                      <p className="doc-error-text">{sectionError}</p>
+                    )}
+                    <form
+                      onSubmit={handleCreateSection}
+                      className="doc-section-add-form"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Section header"
+                        value={newSectionHeader}
+                        onChange={(e) =>
+                          setNewSectionHeader(e.target.value)
+                        }
+                      />
+                      <textarea
+                        placeholder="Section body (markdown/plain)"
+                        value={newSectionBody}
+                        onChange={(e) =>
+                          setNewSectionBody(e.target.value)
+                        }
+                        rows={6}
+                      />
+                      <label className="doc-image-label">
+                        Image (optional)
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            setNewSectionImage(e.target.files?.[0] ?? null)
+                          }
+                        />
+                      </label>
+                      <button
+                        type="submit"
+                        className="ks-btn-primary"
+                        disabled={sectionSaving}
+                      >
+                        {sectionSaving ? "Saving..." : "Add section"}
+                      </button>
+                    </form>
+                  </div>
+                  <div className="doc-right" />
+                </section>
+              )}
+            </div>
           </div>
-          <div className="doc-right" />
-        </section>
-      )}
+        </main>
+
+        {/* RIGHT COLUMN reserved (empty for now) */}
+        <aside className="document-right-column" />
+
+        {/* FOOTER BAR ACROSS ALL 4 COLUMNS */}
+        <footer className="document-footer document-grid-full">
+          <div className="document-footer-meta">
+            {editMode && canEdit && hasDocUnsavedChanges && (
+              <span className="doc-unsaved-pill">Unsaved changes</span>
+            )}
+          </div>
+          <div className="document-footer-actions">
+            {canEdit && (
+              <>
+                {editMode && (
+                  <button
+                    type="button"
+                    className="document-save-btn ks-btn-primary"
+                    onClick={handleSaveDocument}
+                    disabled={!hasDocUnsavedChanges || docSaving}
+                  >
+                    {docSaving ? "Saving…" : "Save document"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="document-edit-toggle ks-btn-secondary"
+                  onClick={async () => {
+                    if (editMode && hasDocUnsavedChanges) {
+                      const ok = window.confirm(
+                        "You have unsaved changes to this document. Discard them?"
+                      );
+                      if (!ok) {
+                        return;
+                      }
+                      setInitialDocSnapshot(null);
+                      await loadDoc();
+                    }
+
+                    setEditMode((m: boolean) => !m);
+                    setEditingSectionId(null);
+                    setEditingLinkId(null);
+                    setSectionError(null);
+                    setLinkError(null);
+                    setEditSectionImage(null);
+                    setNewSectionImage(null);
+                    setActiveInfo(null);
+                    setLockedInfo(null);
+                  }}
+                >
+                  {editMode ? "Done editing" : "Edit document"}
+                </button>
+              </>
+            )}
+          </div>
+        </footer>
+      </div>
 
       {/* MANAGE TAGS + COLLECTIONS MODALS (only while editing) */}
       {editMode && canEdit && (
@@ -819,6 +1098,38 @@ export default function DocumentPage() {
             onDocUpdated={setDoc}
           />
         </>
+      )}
+
+      {/* IMAGE LIGHTBOX OVERLAY */}
+      {lightboxImage && (
+        <div
+          className="doc-image-lightbox-backdrop"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="doc-image-lightbox"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="doc-image-lightbox-close"
+              onClick={() => setLightboxImage(null)}
+              aria-label="Close image preview"
+            >
+              ×
+            </button>
+            <img
+              src={lightboxImage.src}
+              alt={lightboxImage.alt}
+              className="doc-image-lightbox-img"
+            />
+            {lightboxImage.alt && (
+              <div className="doc-image-lightbox-caption">
+                {lightboxImage.alt}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

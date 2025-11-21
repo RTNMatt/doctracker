@@ -1,52 +1,54 @@
 /* =========================
    Document Page Styles
-   (keeps your class names)
    ========================= */
 
 .document-page {
   color: var(--text);
+  background: var(--bg);
+  text-align: left;
 }
 
-/* Optional header structure if present */
+/* --- 4-column layout shell --- */
+
+.document-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.1fr) minmax(0, 2.1fr) minmax(0, 1fr);
+  column-gap: 24px;
+  row-gap: 24px;
+
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 16px 0 32px;
+}
+
+.document-grid-full {
+  grid-column: 1 / -1;
+}
+
+/* --- Header: centered title + status --- */
+
 .document-header {
-  max-width: 1280px;
-  margin: 0 auto 20px;
-  padding: 0 16px;
+  text-align: center;
 }
 
 .document-header-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.document-header-meta {
-  margin-top: 4px;
-  font-size: 0.9rem;
-  color: var(--muted);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 16px 8px;
 }
 
 .document-title {
-  margin: 0 0 8px;
-  font-size: clamp(22px, 3.6vw, 32px);
+  margin: 0;
+  font-size: clamp(22px, 3.4vw, 30px);
   line-height: 1.2;
   color: var(--text);
 }
 
-.document-meta {
-  color: var(--muted);
-  font-size: 0.95rem;
-}
+/* Status pill */
 
-.document-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Status pill & collections pill */
 .document-status {
   display: inline-flex;
   align-items: center;
@@ -59,57 +61,227 @@
   color: var(--muted, #555);
 }
 
-.document-collections-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  background: var(--surface, #f5f5f8);
-  color: var(--muted, #555);
-}
+/* Buttons reused in footer */
 
-/* Header buttons */
 .document-save-btn,
 .document-edit-toggle {
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 0.9rem;
   cursor: pointer;
-  border: 1px solid transparent;
 }
 
-.document-save-btn {
-  background: var(--brand, #3a7bfa);
-  color: #fff;
-  border-color: var(--brand, #3a7bfa);
-}
+/* Error text */
 
-.document-save-btn:disabled {
-  opacity: 0.7;
-  cursor: default;
-}
-
-.document-edit-toggle {
-  background: var(--surface, #f7f7f9);
-  color: var(--text, #222);
-  border-color: var(--hairline, #ddd);
-}
-
-/* Error text at top of page */
 .document-error {
   color: red;
-  margin-top: 8px;
-  max-width: 1280px;
-  padding: 0 16px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 0;
+  max-width: 100%;
 }
 
-/* -------- Links block -------- */
+/* --- Left column: tags + visibility + collections --- */
+
+.document-left-column {
+  grid-column: 1 / 2;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tags panel */
+
+.doc-sidebar-panel {
+  background: var(--surface, #f7f8fc);
+  border-radius: 14px;
+  border: 1px solid var(--sidebar-edge, #d6e4ff);
+  padding: 10px 12px 22px;
+  position: relative; /* for bottom-right info icon */
+}
+
+.doc-sidebar-toggle {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 2px 0 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--sidebar-text, var(--text));
+}
+
+.doc-sidebar-toggle:disabled {
+  cursor: default;
+  color: var(--muted);
+}
+
+.doc-sidebar-title {
+  font-weight: 600;
+}
+
+.doc-sidebar-toggle-indicator {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.doc-sidebar-body {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+}
+
+.doc-sidebar-manage-block {
+  margin-top: 10px;
+}
+
+/* Sidebar primary button uses ks button palette */
+
+.doc-sidebar-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+/* Generic sidebar sections (visibility, collections) */
+
+.doc-sidebar-section {
+  background: var(--surface, #f7f8fc);
+  border-radius: 14px;
+  border: 1px solid var(--sidebar-edge, #d6e4ff);
+  padding: 10px 12px 22px;
+  position: relative; /* for bottom-right info icon */
+}
+
+.doc-sidebar-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.doc-sidebar-heading {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+/* Visibility block inside sidebar */
+
+.doc-visibility-block {
+  margin: 4px 0 6px;
+}
+
+.doc-toggle-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.doc-visibility-note {
+  font-size: 0.85rem;
+  margin-top: 4px;
+  color: var(--muted, #666);
+}
+
+/* --- Info bubble for sidebar boxes (bottom-right) --- */
+
+.doc-info-bubble {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  flex-shrink: 0;
+}
+
+.doc-info-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline, #d0d7e2);
+  background: var(--surface, #f7f8fc);
+  color: var(--muted, #6b7280);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.doc-info-icon--active {
+  background: var(--brand, #3a7bfa);
+  border-color: var(--brand, #3a7bfa);
+  color: #fff;
+}
+
+.doc-info-popover {
+  position: absolute;
+  top: -8px;
+  right: 24px;
+  z-index: 50;
+  min-width: 220px;
+  max-width: 280px;
+
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface, #ffffff);
+  border: px solid var(--hairline, #d0d7e2);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+
+  font-size: 0.8rem;
+  color: var(--muted, #4b5563);
+}
+
+.doc-info-popover p {
+  margin: 0 0 4px;
+}
+
+.doc-info-popover p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Center columns: “paper” --- */
+
+.document-main {
+  grid-column: 2 / 4;
+}
+
+.doc-paper {
+  background: var(--doc-paper-bg, #ffffff);
+  color: var(--doc-paper-text, var(--text));
+  border-radius: 18px 18px 0 0;
+  border: 1px solid var(--sidebar-edge, #d6e4ff);
+  border-bottom: none;
+  padding: 40px 80px 80px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+
+  /* tuned to reach the bottom bar without forcing extra scroll */
+  min-height: calc(100vh - 56px - 152px);
+}
+
+/* inner gutter so sections don't touch the edges */
+.doc-paper-inner {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Small section title inside paper */
+
+.doc-paper-subtitle {
+  margin: 0 0 10px;
+}
+
+/* Relevant links */
+
 .doc-links {
   list-style: none;
-  margin: 0;
+  margin: 0 0 16px;
   padding: 0;
   display: grid;
   gap: 6px;
@@ -125,18 +297,44 @@
   text-decoration: underline;
 }
 
-/* Inline edit buttons etc. */
 .doc-inline-edit-btn {
   margin-left: 8px;
   font-size: 0.8rem;
+  border-radius: 999px;
+  border: none;
+  padding: 4px 10px;
+  background: var(--brand);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+  transition:
+    background 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
 }
+
+.doc-inline-edit-btn:hover {
+  background: var(--brand-strong, var(--brand));
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
+  transform: translateY(-0.5px);
+}
+
+.doc-inline-edit-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 
 .doc-inline-buttons {
   display: flex;
   gap: 8px;
 }
 
-/* Forms for link editing/adding */
+/* Link edit/add forms */
+
 .doc-link-edit-form {
   display: inline-block;
   width: 100%;
@@ -149,34 +347,33 @@
 }
 
 .doc-links-add-block {
-  margin-top: 16px;
-  margin-bottom: 24px;
-  max-width: 1280px;
-  padding: 0 16px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 28px;
 }
 
 .doc-link-add-form {
   max-width: 600px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* Generic small error text */
 .doc-error-text {
   color: red;
 }
 
-/* -------- Two-column content -------- */
+/* --- Sections inside the paper --- */
+
 .doc-contents {
   display: grid;
   grid-template-columns: 1.25fr 0.95fr;
-  gap: 30px;
+  gap: 32px;
+  margin: 0 auto 28px;
+  padding: 14px 0 18px;
+  border-bottom: 1px solid var(--hairline, #e5ecf6);
+}
 
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 20px;
+.doc-contents:last-of-type {
+  border-bottom: none;
 }
 
 /* Left column (body/sections) */
@@ -184,7 +381,7 @@
   min-width: 0;
 }
 
-/* Right column (image/preview/panel) — NO BOX STYLE */
+/* Right column (image) */
 .doc-right {
   min-width: 0;
   min-height: 0;
@@ -192,50 +389,25 @@
   place-items: center;
 }
 
-/* -------- Section content -------- */
-.doc-section {
-  margin: 0 0 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.doc-section:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
+/* Section title / body */
 
 .doc-section-title {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: clamp(16px, 2.2vw, 20px);
   font-weight: 600;
   color: var(--text);
 }
 
-.doc-section-body {
-  color: var(--text);
-  line-height: 1.6;
-}
-
-.doc-section-body p {
-  margin: 0 0 10px;
-}
-
-.doc-section-body ul,
-.doc-section-body ol {
-  margin: 0 0 10px 18px;
-}
-
-/* Preformatted body text */
 .doc-section-pre {
   white-space: pre-wrap;
 }
 
-/* Wrapper for section images if needed */
+/* Wrapper for section images */
 .doc-section-image-wrapper {
   margin: 8px 0;
 }
 
-/* -------- Section images (NO BORDER/BOX) -------- */
+/* Section images */
 .doc-sec-img {
   max-width: 100%;
   max-height: 50%;
@@ -243,71 +415,81 @@
   object-fit: contain;
   display: block;
   border-radius: 8px;
+
+  cursor: zoom-in; /* 👈 new */
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
-/* -------- Small helpers -------- */
-.doc-hint {
-  color: var(--muted);
-  font-size: 0.95rem;
+.doc-sec-img:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
 }
 
 /* Section edit/add forms */
+
 .doc-section-edit-form,
 .doc-section-add-form {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .doc-image-label {
   font-size: 0.9rem;
 }
 
-/* Add section block spacing */
 .doc-add-section-block {
-  margin-block: 24px;
+  margin-block: 28px;
 }
 
-/* -------- Responsive -------- */
-@media (max-width: 1000px) {
-  .doc-contents {
-    gap: 22px;
-    max-width: 95%;
-    grid-template-columns: 1.1fr 0.9fr;
-  }
+/* --- Input & textarea styling (clean SaaS look) --- */
+
+.doc-paper input[type="text"],
+.doc-paper input[type="url"],
+.doc-paper input[type="file"],
+.doc-paper textarea {
+  font: inherit;
+  font-size: 0.92rem;
+  border-radius: 8px;
+  border: 1px solid var(--hairline, #d0d7e2);
+  padding: 8px 10px;
+  background: var(--surface, #f7f8fc);
+  color: var(--text);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
 }
 
-@media (max-width: 800px) {
-  .doc-contents {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-    gap: 18px;
-  }
-  .doc-right {
-    min-height: 0;
-  }
+.doc-paper textarea {
+  resize: vertical;
+  min-height: 120px;
 }
 
-/* If the right column is empty, collapse to a single centered column */
-.doc-contents:has(.doc-right:empty) {
-  grid-template-columns: 1fr;
-  max-width: 900px;
+.doc-paper input[type="file"] {
+  padding: 4px 2px;
+  background: transparent;
 }
 
-/* Don’t render an empty right column */
-.doc-right:empty {
-  display: none;
+.doc-paper input:focus-visible,
+.doc-paper textarea:focus-visible {
+  outline: none;
+  border-color: var(--brand, #3a7bfa);
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
 }
 
-/* --- Tag bar (minimal additions) --- */
+/* --- Right column (reserved for future comments/tags) --- */
+
+.document-right-column {
+  grid-column: 4 / 5;
+}
+
+/* --- Tag chips (keep your color palette) --- */
+
 .doc-tagbar {
   display: grid;
   gap: 8px 14px;
   grid-template-columns: 1fr;
-  margin: 6px 0 10px;
-  max-width: 1280px;
-  padding: 0 16px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .tag-group {
@@ -356,7 +538,8 @@
   outline-offset: 2px;
 }
 
-/* Group colors */
+/* Tag color palette tuned to sidebar blues/greens */
+
 :root {
   --tag-dept-bg: #eaf2ff;
   --tag-dept-fg: #1f2a44;
@@ -372,7 +555,6 @@
   --tag-ext-ol: #e2d3ff;
 }
 
-/* outlines now match each tag's palette */
 .tag-chip.is-dept {
   background: var(--tag-dept-bg);
   color: var(--tag-dept-fg);
@@ -401,52 +583,198 @@
   outline: 2px solid var(--tag-ext-ol);
 }
 
-/* Responsive */
+/* --- Footer row: fixed at bottom of viewport, outside sidebar --- */
+
+.document-footer {
+  position: fixed;
+  left: 280px;
+  right: 0;
+  bottom: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 32px;
+  border-top: 1px solid var(--hairline);
+
+  /*background: linear-gradient(
+    to bottom,
+    rgba(248, 250, 252, 0.92),
+    rgba(248, 250, 252, 1)
+  );
+  */
+  background: var(--sidebar-bg, var(--surface));
+
+  backdrop-filter: blur(8px);
+
+  font-size: 0.9rem;
+  color: var(--muted);
+  z-index: 40;
+
+  height: 63.5px;
+}
+
+.document-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Unsaved pill */
+
+.doc-unsaved-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface, #f5f5f8);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* --- Responsive tweaks --- */
+
+@media (max-width: 1100px) {
+  .document-grid {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr) minmax(0, 1.4fr);
+  }
+  .document-right-column {
+    display: none;
+  }
+  .document-main {
+    grid-column: 2 / 4;
+  }
+}
+
+@media (max-width: 900px) {
+  .document-footer {
+    left: 0;
+    padding-inline: 16px;
+  }
+}
+
 @media (max-width: 800px) {
+  .document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-left-column,
+  .document-main,
+  .document-right-column {
+    grid-column: 1 / -1;
+  }
+
+  .doc-paper {
+    padding: 20px 16px 72px;
+    min-height: auto;
+  }
+
+  .doc-paper-inner {
+    max-width: 100%;
+  }
+
+  .doc-contents {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .doc-right {
+    min-height: 0;
+  }
+
   .tag-group {
     grid-template-columns: 1fr;
   }
+
   .tag-group-label {
     text-align: left;
   }
 }
 
-/* ----- Document meta / visibility section ----- */
-.doc-meta-edit {
-  max-width: 1280px;
-  margin: 0 auto 24px;
-  padding: 0 16px;
+/* If the right column in a section is empty, collapse to one column */
+.doc-contents:has(.doc-right:empty) {
+  grid-template-columns: 1fr;
 }
 
-.doc-visibility-block {
-  margin: 8px 0 12px;
+/* Don’t render an empty right column in a section */
+.doc-right:empty {
+  display: none;
 }
 
-.doc-toggle-line {
+
+/* =========================
+   Image lightbox overlay
+   ========================= */
+
+.doc-image-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
   display: flex;
   align-items: center;
+  justify-content: center;
+  z-index: 200; /* above footer, sidebar, etc */
+}
+
+.doc-image-lightbox {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: 12px 12px 16px;
+  background: #0b1120;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
 }
 
-.doc-visibility-note {
+.doc-image-lightbox-img {
+  max-width: 100%;
+  max-height: 80vh;
+  height: auto;
+  object-fit: contain;
+  cursor: zoom-out;
+  border-radius: 8px;
+  background: #020617;
+}
+
+.doc-image-lightbox-caption {
   font-size: 0.85rem;
+  color: #e5e7eb;
+  text-align: center;
   margin-top: 4px;
-  color: var(--muted, #666);
 }
 
-/* ----- Tags / collections edit section ----- */
-.doc-tags-edit {
-  max-width: 1280px;
-  margin: 0 auto 24px;
-  padding: 0 16px;
+/* close button in top-right of the lightbox */
+.doc-image-lightbox-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.8);
+  color: #e5e7eb;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.doc-tags-text {
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-}
-
-.doc-separator {
-  margin: 20px 0;
+.doc-image-lightbox-close:hover {
+  background: rgba(15, 23, 42, 1);
 }

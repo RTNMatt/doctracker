@@ -5,7 +5,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import PathTrail from "../components/PathTrail";
 import { usePathTree } from "../state/PathTree";
-import { useAuth } from "../context/AuthContext"; // ⟵ added
+import { useAuth } from "../context/AuthContext";
+import SettingsModal from "../components/SettingsModal";
+
 
 type NavItem = {
   to: string;
@@ -15,6 +17,7 @@ type NavItem = {
 
 export default function Sidebar() {
   const [q, setQ] = useState("");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { resetTo } = usePathTree();
@@ -42,7 +45,7 @@ export default function Sidebar() {
   }
 
   function handleOpenSettings() {
-    navigate("/settings");
+    setIsSettingsOpen(true);
   }
 
   const nav: NavItem[] = [
@@ -66,71 +69,77 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="site-sidebar">
-      <div className="sidebar-body">
-        <div className="sidebar-logo">
-          <img src="/logo-full.svg" alt="Knowledge Stack logo" />
+    <>
+      <aside className="site-sidebar">
+        <div className="sidebar-body">
+          <div className="sidebar-logo">
+            <img src="/logo-full.svg" alt="Knowledge Stack logo" />
+          </div>
+
+          {/* Search */}
+          <form onSubmit={onSubmit} className="sidebar-search">
+            <input
+              type="search"
+              placeholder="Search docs, departments, collections…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Search"
+            />
+          </form>
+
+          {/* Nav */}
+          <nav className="sidebar-nav">
+            <ul>
+              {nav.map((item) => {
+                const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                return (
+                  <li key={item.to}>
+                    <Link
+                      className={active ? "active" : ""}
+                      to={item.to}
+                      onClick={() => handleNavClick(item.to)}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          {/* Path trail in a card */}
+          <div className="pathtrail-card">
+            <PathTrail />
+          </div>
+          <div className="sidebar-spacer" aria-hidden="true" />
         </div>
 
-        {/* Search */}
-        <form onSubmit={onSubmit} className="sidebar-search">
-          <input
-            type="search"
-            placeholder="Search docs, departments, collections…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label="Search"
-          />
-        </form>
+        {/* Bottom: profile + settings */}
+        <div className="sidebar-foot">
+          <button
+            className="settings-btn"
+            aria-label="Settings"
+            title="Settings"
+            onClick={handleOpenSettings}
+          >
+            <Settings className="icon-cog" />
+          </button>
 
-        {/* Nav */}
-        <nav className="sidebar-nav">
-          <ul>
-            {nav.map((item) => {
-              const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-              return (
-                <li key={item.to}>
-                  <Link
-                    className={active ? "active" : ""}
-                    to={item.to}
-                    onClick={() => handleNavClick(item.to)}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* Path trail in a card */}
-        <div className="pathtrail-card">
-          <PathTrail />
-        </div>
-        <div className="sidebar-spacer" aria-hidden="true" />
-      </div>
-
-      {/* Bottom: profile + settings */}
-      <div className="sidebar-foot">
-        <button
-          className="settings-btn"
-          aria-label="Settings"
-          title="Settings"
-          onClick={handleOpenSettings}
-        >
-          <Settings className="icon-cog" />
-        </button>
-
-        <div className="user-chip" title={isSignedIn ? userName : "Not signed in"}>
-          <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
-          <div className="user-meta">
-            <div className="user-name">{userName}</div>
-            <button className="link-button" onClick={handleSignInOut}>
-              {isSignedIn ? "Sign out" : "Sign in"}
-            </button>
+          <div className="user-chip" title={isSignedIn ? userName : "Not signed in"}>
+            <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
+            <div className="user-meta">
+              <div className="user-name">{userName}</div>
+              <button className="link-button" onClick={handleSignInOut}>
+                {isSignedIn ? "Sign out" : "Sign in"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+      </>
   );
 }
