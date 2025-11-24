@@ -2,64 +2,127 @@
    Shared modal styles (backdrop, container, header, buttons, chips, etc.)
    come from KSModal.css. */
 
+/* Mode toggle: "Select existing" vs "Create new" */
+
 .manage-collections-mode-toggle {
   display: inline-flex;
   border-radius: 999px;
-  border: 1px solid var(--hairline, #ddd);
+  border: 1px solid var(--border-soft);
   overflow: hidden;
-  margin: 8px 0 12px;
+  margin: 8px auto 12px;
+  background: var(--card-bg);
 }
 
 .manage-collections-mode-btn {
-  padding: 4px 12px;
+  padding: 4px 14px;
   border: none;
   background: transparent;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-family: inherit;
   cursor: pointer;
+  color: var(--card-text);
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+  white-space: nowrap;
 }
 
 .manage-collections-mode-btn.is-active {
-  background: var(--brand, #3a7bfa);
+  background: var(--brand);
   color: #fff;
 }
 
+/* Body layout */
+
 .manage-collections-body {
   display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 16px;
+  align-items: flex-start;
+  margin-top: 8px;
 }
 
+/* Generic sections (left + right) */
+
 .manage-collections-section {
-  margin-top: 8px;
+  background: none;
+  padding: 0;
 }
 
 .manage-collections-section h4 {
   margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-.manage-collections-help {
+.manage-collections-help,
+.manage-collections-muted {
   font-size: 0.85rem;
-  color: var(--muted, #666);
   margin: 0 0 8px;
+  color: var(--muted);
 }
 
 .manage-collections-muted {
-  font-size: 0.85rem;
-  color: var(--muted, #777);
+  font-style: italic;
 }
 
-.manage-collections-footer {
+/* Chip rows */
+
+.manage-collections-chips-row,
+.manage-collections-section .ks-modal-chips-row {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
 }
 
-/* Create-mode form layout */
+/* Tag chips for collections
+   (match collection tag style from the Document page) */
+
+.manage-collections-section .tag-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--tag-col-bg);
+  color: var(--tag-col-fg);
+  border: 1px solid transparent;
+  outline: 2px solid var(--tag-col-ol);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.manage-collections-section .tag-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(47, 106, 253, 0.12);
+}
+
+.manage-collections-section .tag-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Selected collection chips */
+
+.manage-collections-section .tag-chip.tag-chip--selected {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(47, 106, 253, 0.20);
+}
+
+/* Scrollable list of existing collections (if used) */
+
+.manage-collections-scroll-list {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+/* Form area when creating a new collection */
 
 .manage-collections-form {
   display: grid;
   gap: 10px;
-  max-width: 420px;
+  margin-top: 8px;
 }
 
 .manage-collections-field {
@@ -68,12 +131,102 @@
   font-size: 0.9rem;
 }
 
+/* Inputs in the create form:
+   match sidebar search / themed controls */
+
 .manage-collections-field input,
 .manage-collections-field textarea {
   width: 100%;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--hairline, #ddd);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
   font-size: 0.9rem;
   font-family: inherit;
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+}
+
+.manage-collections-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Footer actions (bottom row inside modal) */
+
+.manage-collections-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Back / Create & attach buttons in create mode:
+   pill-style matching other save buttons */
+
+.manage-collections-primary-btn,
+.manage-collections-secondary-btn {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+/* Back button */
+
+.manage-collections-secondary-btn {
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  border-color: var(--border-soft);
+}
+
+.manage-collections-secondary-btn:hover {
+  background: color-mix(in oklab, var(--sidebar-control-bg) 88%, white);
+  border-color: var(--brand);
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.18);
+  transform: translateY(-0.5px);
+}
+
+/* Create & attach button */
+
+.manage-collections-primary-btn {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+.manage-collections-primary-btn:hover {
+  background: var(--brand-strong, var(--brand));
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
+  transform: translateY(-0.5px);
+}
+
+/* Responsive collapse to single column on smaller screens */
+
+@media (max-width: 700px) {
+  .manage-collections-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+html.dark .tag-chip {
+  background: transparent;
+  color: var(--sidebar-text-dark);
+  border-color: var(--sidebar-edge-dark);
+}
+
+html.dark .tag-chip.tag-chip--selected {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-strong);
 }

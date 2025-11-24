@@ -54,6 +54,41 @@ class Membership(models.Model):
     def __str__(self) -> str:
         return f"{self.user} @ {self.org} ({self.role})"
 
+class UserTheme(models.Model):
+    """
+    Per-user theme preferences (mode + custom colors).
+    This is global per user (not org-scoped).
+    """
+    MODE_CHOICES = (
+        ("light", "Light"),
+        ("dark", "Dark"),
+        ("custom", "Custom"),
+    )
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="theme",
+    )
+    mode = models.CharField(
+        max_length=20,
+        choices=MODE_CHOICES,
+        default="light",
+    )
+    # Stores your CustomTheme shape:
+    # {
+    #   "sidebarBg": "#...",
+    #   "sidebarText": "#...",
+    #   ...
+    # }
+    custom = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"Theme for {self.user}"
+
 
 # -----------------------------
 # Departments

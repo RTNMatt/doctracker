@@ -15,6 +15,7 @@ from .models import (
     Collection,
     Tile,
     RequirementSnippet,
+    UserTheme,
     assemble_requirements_from_tags,
 )
 
@@ -84,6 +85,14 @@ class OrgScopedSerializerMixin:
                 raise serializers.ValidationError("Object belongs to a different organization.")
 
         return super().validate(attrs)
+
+# -----------------------
+# User theme serializer
+# -----------------------
+class UserThemeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTheme
+        fields = ["mode", "custom"]
 
 
 # -----------------------

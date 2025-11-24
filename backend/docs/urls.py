@@ -7,7 +7,8 @@ from .views import (
     DepartmentViewSet, TemplateViewSet, TagViewSet, RequirementSnippetViewSet,
     DocumentViewSet, SectionViewSet, ResourceLinkViewSet,
     CollectionViewSet,
-    health, tiles, search
+    health, tiles, search,
+    UserThemeView
 )
 
 # NEW: import auth views
@@ -30,6 +31,8 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("tiles/", tiles, name="tiles"),
     path("search/", search, name="search"),
+
+    path("theme/", UserThemeView.as_view(), name="user-theme"),
 
     # NEW: auth endpoints (added, not replacing anything)
     path("auth/login/", LoginView.as_view(), name="auth-login"),

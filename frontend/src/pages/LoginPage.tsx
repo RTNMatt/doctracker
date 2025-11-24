@@ -16,6 +16,63 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔒 Force a base light theme while on the login page
+  useEffect(() => {
+    const root = document.documentElement;
+
+    const prevThemeAttr = root.getAttribute("data-theme");
+    const prevContentBg = root.style.getPropertyValue("--content-bg");
+    const prevSidebarText = root.style.getPropertyValue("--sidebar-text");
+    const prevSidebarEdge = root.style.getPropertyValue("--sidebar-edge");
+    const prevMuted = root.style.getPropertyValue("--muted");
+    const prevBrand = root.style.getPropertyValue("--brand");
+
+    root.setAttribute("data-theme", "login-light");
+    root.style.setProperty("--content-bg", "#f7f8fa");
+    root.style.setProperty("--sidebar-text", "#0f172a");
+    root.style.setProperty("--sidebar-edge", "#e6e8eb");
+    root.style.setProperty("--muted", "#6b7280");
+    root.style.setProperty("--brand", "#3a7bfa");
+
+    return () => {
+      if (prevThemeAttr !== null) {
+        root.setAttribute("data-theme", prevThemeAttr);
+      } else {
+        root.removeAttribute("data-theme");
+      }
+
+      if (prevContentBg) {
+        root.style.setProperty("--content-bg", prevContentBg);
+      } else {
+        root.style.removeProperty("--content-bg");
+      }
+
+      if (prevSidebarText) {
+        root.style.setProperty("--sidebar-text", prevSidebarText);
+      } else {
+        root.style.removeProperty("--sidebar-text");
+      }
+
+      if (prevSidebarEdge) {
+        root.style.setProperty("--sidebar-edge", prevSidebarEdge);
+      } else {
+        root.style.removeProperty("--sidebar-edge");
+      }
+
+      if (prevMuted) {
+        root.style.setProperty("--muted", prevMuted);
+      } else {
+        root.style.removeProperty("--muted");
+      }
+
+      if (prevBrand) {
+        root.style.setProperty("--brand", prevBrand);
+      } else {
+        root.style.removeProperty("--brand");
+      }
+    };
+  }, []);
+
   // If already authenticated, bounce to next
   useEffect(() => {
     if (user) navigate(next, { replace: true });

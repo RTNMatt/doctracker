@@ -24,7 +24,6 @@ type ColorControlProps = {
 function ColorControl({
   label,
   description,
-  colorKey,
   value,
   onChange,
 }: ColorControlProps) {
@@ -38,7 +37,6 @@ function ColorControl({
       onChange(value);
       return;
     }
-    // naive hex cleanup: ensure it starts with "#"
     onChange(v.startsWith("#") ? v : `#${v}`);
   };
 
@@ -161,31 +159,57 @@ function AppearanceSection() {
               value={customTheme.sidebarText}
               onChange={(val) => handleColorUpdate("sidebarText", val)}
             />
+            <ColorControl
+              label="Sidebar controls"
+              description="Search bar and PathTree background."
+              colorKey="sidebarControlBg"
+              value={customTheme.sidebarControlBg}
+              onChange={(val) => handleColorUpdate("sidebarControlBg", val)}
+            />
+            <ColorControl
+              label="Sidebar control text"
+              description="Search text and PathTree labels."
+              colorKey="sidebarControlText"
+              value={customTheme.sidebarControlText}
+              onChange={(val) => handleColorUpdate("sidebarControlText", val)}
+            />
           </div>
 
-          {/* Main canvas */}
+          {/* Content */}
           <div className="settings-color-group">
-            <h4 className="settings-color-group-title">Main canvas</h4>
+            <h4 className="settings-color-group-title">Main content</h4>
             <ColorControl
-              label="Main background"
+              label="Content background"
               description="Background behind documents and tiles."
-              colorKey="mainBg"
-              value={customTheme.mainBg}
-              onChange={(val) => handleColorUpdate("mainBg", val)}
+              colorKey="contentBg"
+              value={customTheme.contentBg}
+              onChange={(val) => handleColorUpdate("contentBg", val)}
             />
             <ColorControl
-              label="Surface"
-              description="Cards, panels, and other raised surfaces."
-              colorKey="surface"
-              value={customTheme.surface}
-              onChange={(val) => handleColorUpdate("surface", val)}
+              label="Content text"
+              description="Default text color in main content areas."
+              colorKey="contentText"
+              value={customTheme.contentText}
+              onChange={(val) => handleColorUpdate("contentText", val)}
+            />
+          </div>
+
+          {/* Cards / tiles / tags */}
+          <div className="settings-color-group">
+            <h4 className="settings-color-group-title">Cards & tags</h4>
+            <ColorControl
+              label="Card background"
+              description="Tile cards, tag chips, and settings cards."
+              colorKey="cardBg"
+              value={customTheme.cardBg}
+              onChange={(val) => handleColorUpdate("cardBg", val)}
             />
             <ColorControl
-              label="Borders"
-              description="Hairlines and card edges."
-              colorKey="hairline"
-              value={customTheme.hairline}
-              onChange={(val) => handleColorUpdate("hairline", val)}
+              label="Card text"
+              description="Text on cards, tiles, and tag chips."
+              colorKey="cardText"
+              value={customTheme.cardText}
+              onChange={(val) => handleColorUpdate("cardText", val)}
             />
           </div>
 
@@ -193,18 +217,18 @@ function AppearanceSection() {
           <div className="settings-color-group">
             <h4 className="settings-color-group-title">Document</h4>
             <ColorControl
-              label="Doc paper background"
+              label="Document background"
               description="The page behind document sections."
-              colorKey="docPaperBg"
-              value={customTheme.docPaperBg}
-              onChange={(val) => handleColorUpdate("docPaperBg", val)}
+              colorKey="docBg"
+              value={customTheme.docBg}
+              onChange={(val) => handleColorUpdate("docBg", val)}
             />
             <ColorControl
-              label="Doc text"
+              label="Document text"
               description="Default text color inside documents."
-              colorKey="docPaperText"
-              value={customTheme.docPaperText}
-              onChange={(val) => handleColorUpdate("docPaperText", val)}
+              colorKey="docText"
+              value={customTheme.docText}
+              onChange={(val) => handleColorUpdate("docText", val)}
             />
           </div>
 
@@ -213,23 +237,35 @@ function AppearanceSection() {
             <h4 className="settings-color-group-title">Accent</h4>
             <ColorControl
               label="Brand"
-              description="Buttons, links, and highlight accents."
+              description="Primary accent for buttons and highlights."
               colorKey="brand"
               value={customTheme.brand}
               onChange={(val) => handleColorUpdate("brand", val)}
             />
+            <ColorControl
+              label="Brand (hover/active)"
+              description="Hover and active states."
+              colorKey="brandStrong"
+              value={customTheme.brandStrong}
+              onChange={(val) => handleColorUpdate("brandStrong", val)}
+            />
           </div>
         </div>
 
-        {!isCustom && (
-          <p className="settings-inline-hint">
-            Switch to <strong>Custom</strong> to see these colors applied.
-          </p>
-        )}
+        <p className="settings-inline-hint">
+          {isCustom ? (
+            <>Custom colors are applied to this theme.</>
+          ) : (
+            <>
+              Switch to <strong>Custom</strong> to see these colors applied.
+            </>
+          )}
+        </p>
       </section>
     </div>
   );
 }
+
 
 function PlaceholderSection({ title }: { title: string }) {
   return (

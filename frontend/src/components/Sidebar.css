@@ -7,8 +7,8 @@
   align-self: start;
   height: 100dvh;
 
-  width: 280px;      /* add this */
-  flex-shrink: 0;    /* and this, for safety in flex/grid contexts */
+  width: 280px;
+  flex-shrink: 0;
 
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-edge);
@@ -33,13 +33,11 @@
 }
 
 /* ===========================
-   Sidebar Body (fills between logo and footer)
-   Rows: logo(auto) / search(auto) / nav(auto) / card(0.7fr) / spacer(0.3fr)
+   Sidebar Body
    =========================== */
 .sidebar-body {
   padding: 12px;
 
-  /* allow body to fill the sidebar’s height */
   flex: 1 1 auto;
   min-height: 0;
 
@@ -47,24 +45,30 @@
   grid-template-rows: auto auto auto minmax(0, 0.7fr) minmax(0, 0.3fr);
   row-gap: 12px;
 
-  /* body itself shouldn't scroll; inner parts may */
   overflow: hidden;
 }
 
 /* Search */
-.sidebar-search { margin-bottom: 0; }
+.sidebar-search {
+  margin-bottom: 0;
+}
+
 .sidebar-search input[type="search"] {
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--hairline);
-  background: #ffffff;
-  color: var(--sidebar-text);
+  background: var(--sidebar-control-bg, #ffffff);
+  color: var(--sidebar-control-text, var(--sidebar-text));
 }
-.sidebar-search input::placeholder { opacity: 0.8; }
+
+.sidebar-search input::placeholder {
+  opacity: 0.8;
+  color: var(--sidebar-control-text, var(--sidebar-muted, var(--sidebar-text)));
+}
 
 /* Nav */
-:root { --nav-to-card-gap: 16px; } /* adjust extra gap between nav and card */
+:root { --nav-to-card-gap: 16px; }
 .sidebar-nav { margin-bottom: var(--nav-to-card-gap); }
 .sidebar-nav ul { list-style: none; padding: 0; margin: 8px 0 0; }
 .sidebar-nav li { margin: 4px 0; }
@@ -83,36 +87,21 @@
 }
 
 /* ===========================
-   Path Trail (Card style, ~70% of leftover space)
+   Path Trail Card
    =========================== */
-:root {
-  --content-bg: #fff; /* fallback if not set elsewhere */
-  --surface: var(--content-bg);
-  --surface-border: var(--sidebar-edge, #e6e8eb);
-  --surface-radius: 12px;
-  --surface-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 10px rgba(0,0,0,0.04);
-
-  /* Fixed row sizing + indentation controls */
-  --pt-row-height: 32px;   /* was 40px; smaller rows */
-  --pt-gap: 6px;           /* vertical gap between rows */
-  --pt-connector-h: 10px;  /* height of dashed connector segment */
-  --pt-indent-step: 14px;  /* horizontal step per depth level */
-}
-
-/* Card wrapper occupies the 4th grid row (0.7fr) */
 .pathtrail-card {
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--surface-radius);
-  box-shadow: var(--surface-shadow);
+  background: var(--sidebar-control-bg);
+  border: 1px solid var(--sidebar-edge);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 4px 10px rgba(0,0,0,0.04);
   padding: 10px 8px;
 
-  /* important: allow child to size/scroll inside */
   min-height: 0;
   display: flex;
   flex-direction: column;
 
-  /*Stop from expanding right*/
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -120,42 +109,36 @@
 /* Empty spacer occupies the 5th grid row (0.3fr) */
 .sidebar-spacer { min-height: 0; }
 
-/* Trail layout inside the card (fixed-size rows, leftover space empty) */
+/* Trail layout inside the card */
 .pathtrail {
   display: grid;
-  gap: var(--pt-gap);
+  gap: 6px;
 
-  /* Do NOT distribute to fill leftover vertical space */
   align-content: start;
   justify-items: stretch;
 
-  /* keep scroll behavior for long trails */
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;      /* scroll when long */
-  padding-right: 2px;  /* avoid scrollbar overlaying chips */
+  overflow: auto;
+  padding-right: 2px;
 
-  /*Stop from expanding right*/
   max-width: 100%;
   overflow-x: hidden;
 }
 
-/* Each node row is a fixed height + supports indentation */
+/* Each node row supports indentation */
 .pt-item {
   display: grid;
   align-items: center;
-  height: var(--pt-row-height);
+  height: 32px;
   min-height: 0;
 
-  /* indentation: each level pushes to the right by --pt-indent-step */
-  padding-left: calc(var(--pt-indent-step) * var(--i, 0));
+  padding-left: calc(14px * var(--i, 0));
 
-  /*Stop from expanding right*/
   box-sizing: border-box;
   max-width: 100%;
 }
 
-/* Active/focus ring is inset so it won't be clipped by overflow */
 .pt-chip {
   height: 100%;
   width: 100%;
@@ -164,46 +147,61 @@
   gap: 8px;
   border-radius: 999px;
   padding: 6px 10px;
-  background: color-mix(in oklab, var(--surface) 88%, white);
-  border: 1px solid var(--surface-border);
-  color: var(--sidebar-text, #222);
+  background: color-mix(in oklab, var(--sidebar-control-bg) 88%, white);
+  border: 1px solid var(--sidebar-edge);
+  color: var(--sidebar-control-text, var(--sidebar-text, #222));
   cursor: pointer;
   text-align: left;
-  transition: background .12s ease, transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  transition:
+    background .12s ease,
+    transform .12s ease,
+    box-shadow .12s ease,
+    border-color .12s ease;
   box-shadow: none;
-  /*Stop from expanding right*/
   max-width: 100%;
   min-width: 0;
 }
 .pt-chip:hover {
-  background: color-mix(in oklab, var(--surface) 80%, white);
+  background: color-mix(in oklab, var(--sidebar-control-bg) 80%, white);
   transform: translateY(-1px);
 }
 .pt-item.is-active .pt-chip,
 .pt-chip:focus-visible {
-  border-color: var(--brand, #3A7BFA);
-  box-shadow: inset 0 0 0 2px var(--brand, #3A7BFA); /* inset avoids clipping */
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 2px var(--brand);
   outline: none;
 }
 
-/* Connector aligns under the dot; also honors indentation level */
+/* Connector aligns under the dot */
 .pt-connector {
-  height: var(--pt-connector-h);
-  margin: 4px 0 0 calc(22px + var(--pt-indent-step) * var(--i, 0));
-  border-left: 2px dashed var(--sidebar-edge, #e6e8eb);
+  height: 10px;
+  margin: 4px 0 0 calc(22px + 14px * var(--i, 0));
+  border-left: 2px dashed var(--sidebar-edge);
 }
 
 /* Dot uses tag palette tints */
 .pt-dot {
   width: 10px; height: 10px; border-radius: 50%;
-  border: 2px solid var(--surface-border);
-  background: var(--surface);
+  border: 2px solid var(--sidebar-edge);
+  background: var(--sidebar-control-bg);
 }
-.pt-dot.kind-department { background: var(--tag-dept-bg, #EAF2FF); border-color: color-mix(in oklab, var(--tag-dept-fg, #1F2A44) 30%, var(--tag-dept-bg, #EAF2FF)); }
-.pt-dot.kind-collection { background: var(--tag-col-bg,  #E8FFF5); border-color: color-mix(in oklab, var(--tag-col-fg, #055941) 30%, var(--tag-col-bg,  #E8FFF5)); }
-.pt-dot.kind-document   { background: var(--tag-doc-bg,  #FFF5E6); border-color: color-mix(in oklab, var(--tag-doc-fg, #7A4A00) 30%, var(--tag-doc-bg,  #FFF5E6)); }
+.pt-dot.kind-department {
+  background: var(--tag-dept-bg, #EAF2FF);
+  border-color: color-mix(in oklab, var(--tag-dept-fg, #1F2A44) 30%, var(--tag-dept-bg, #EAF2FF));
+}
+.pt-dot.kind-collection {
+  background: var(--tag-col-bg,  #E8FFF5);
+  border-color: color-mix(in oklab, var(--tag-col-fg, #055941) 30%, var(--tag-col-bg,  #E8FFF5));
+}
+.pt-dot.kind-document {
+  background: var(--tag-doc-bg,  #FFF5E6);
+  border-color: color-mix(in oklab, var(--tag-doc-fg, #7A4A00) 30%, var(--tag-doc-bg,  #FFF5E6));
+}
 .pt-dot.kind-index,
-.pt-dot.kind-home       { background: var(--surface); border-color: var(--surface-border); }
+.pt-dot.kind-home {
+  background: var(--sidebar-control-bg);
+  border-color: var(--sidebar-edge);
+}
 
 .pt-label {
   display: inline-block;
@@ -213,9 +211,7 @@
   white-space: nowrap;
 }
 
-/* ---------- Indentation levels (1–12) ----------
-   Assigns --i (depth index) to each subsequent item.
-   Increase or duplicate these blocks if you might exceed 12. */
+/* Indentation levels (1–12) */
 .pathtrail .pt-item:nth-child(1)  { --i: 0; }
 .pathtrail .pt-item:nth-child(2)  { --i: 1; }
 .pathtrail .pt-item:nth-child(3)  { --i: 2; }
@@ -244,9 +240,9 @@
 
 /* Settings button */
 .settings-btn {
-  border: 1px solid var(--hairline);
-  background: #ffffff;
-  color: var(--sidebar-muted);
+  border: 1px solid var(--sidebar-edge);
+  background: transparent; /* match sidebar background, not tag/card bg */
+  color: var(--sidebar-muted, var(--sidebar-text));
   border-radius: 8px;
   padding: 8px;
   cursor: pointer;
@@ -255,14 +251,19 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
 }
+
 .settings-btn:hover,
 .settings-btn:focus-visible {
   color: var(--brand);
   border-color: var(--brand);
-  background: #E8F0FF;
-  box-shadow: 0 0 0 2px rgba(47,106,253,0.15);
+  background: color-mix(in oklab, var(--sidebar-bg) 88%, white);
+  box-shadow: 0 0 0 2px rgba(47, 106, 253, 0.15);
   outline: none;
 }
 .icon-cog { width: 20px; height: 20px; }
@@ -282,7 +283,11 @@
   display: grid; place-items: center;
   font-weight: 700;
   border: 1px solid var(--sidebar-edge);
-  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
 }
 .avatar img {
   width: 100%;

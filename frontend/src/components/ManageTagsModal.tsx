@@ -146,6 +146,20 @@ export default function ManageTagsModal({
     );
   }, [manualTagsOnDoc, selectedManualTagIds, tagSearchCurrent]);
 
+  const filteredDeptTagsOnDoc = useMemo(() => {
+  const q = tagSearchCurrent.trim().toLowerCase();
+  const selectedSet = new Set(selectedDeptTagIds);
+  const current = departmentTagsOnDoc.filter((t: RawTag) =>
+    selectedSet.has(t.id)
+  );
+  if (!q) return current;
+  return current.filter(
+    (t: RawTag) =>
+      t.name.toLowerCase().includes(q) ||
+      (t.slug ?? "").toLowerCase().includes(q)
+  );
+}, [departmentTagsOnDoc, selectedDeptTagIds, tagSearchCurrent]);
+
   // ------------- AVAILABLE TAGS, SPLIT BY CATEGORY -------------
   const availableTagsBase = useMemo(() => {
     const q = tagSearchExisting.trim().toLowerCase();
@@ -483,7 +497,7 @@ export default function ManageTagsModal({
                         key={t.id}
                         type="button"
                         onClick={() => handleDetachManualTag(t.id)}
-                        className="tag-chip tag-chip--selected"
+                        className={`tag-chip tag-chip--selected ${t.link_url ? "tag-ext" : "tag-doc"}`}
                       >
                         {t.name}
                       </button>
@@ -499,37 +513,32 @@ export default function ManageTagsModal({
                       department to the document; removing it removes the
                       department.
                     </p>
-                    <div className="manage-tags-chips-row">
-                      {departmentTagsOnDoc.map((t: RawTag) => {
-                        const active = selectedDeptTagIds.includes(t.id);
-                        return (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => handleToggleDeptTag(t.id)}
-                            className={
-                              "tag-chip " +
-                              (active ? "tag-chip--selected" : "")
-                            }
-                          >
-                            {t.name}
-                          </button>
-                        );
-                      })}
-                    </div>
+
+                    {filteredDeptTagsOnDoc.length === 0 ? (
+                      <p className="manage-tags-muted">
+                        No matching department tags.
+                      </p>
+                    ) : (
+                      <div className="manage-tags-chips-row">
+                        {filteredDeptTagsOnDoc.map((t: RawTag) => {
+                          const active = selectedDeptTagIds.includes(t.id);
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => handleToggleDeptTag(t.id)}
+                              className={
+                                `tag-chip tag-dept ${active ? "tag-chip--selected" : ""}`
+                              }
+                            >
+                              {t.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
-
-                <button
-                  type="button"
-                  className="ks-btn-primary"
-                  onClick={() => {
-                    resetCreateForm();
-                    setMode("create");
-                  }}
-                >
-                  + Create new tag
-                </button>
               </section>
 
               {/* RIGHT: ATTACH EXISTING TAGS (CATEGORIZED) */}
@@ -581,6 +590,7 @@ export default function ManageTagsModal({
                           type="button"
                           onClick={() => handleAttachExistingTag(t.id)}
                           className="tag-chip"
+                          data-kind="department"
                         >
                           {t.name}
                         </button>
@@ -612,6 +622,17 @@ export default function ManageTagsModal({
             </div>
 
             <div className="manage-tags-footer">
+              <button
+                type="button"
+                className="ks-btn-secondary"
+                onClick={() => {
+                  resetCreateForm();
+                  setMode("create");
+                }}
+              >
+                + Create new tag
+              </button>
+
               <button
                 type="button"
                 className="manage-tags-primary-btn"

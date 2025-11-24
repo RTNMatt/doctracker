@@ -106,17 +106,27 @@ class LogoutView(APIView):
 
 class MeView(APIView):
     """
-    Returns the authenticated user's identity, org, and role.
+    Returns the authenticated user's identity, org, role, and theme.
     """
     def get(self, request):
         org = getattr(request, "org", None)
         role = None
+        theme_data = None
 
-        if org and request.user.is_authenticated:
-            from .models import Membership
-            role = Membership.objects.filter(
-                org=org, user=request.user
-            ).values_list("role", flat=True).first()
+        if request.user.is_authenticated:
+            from .models import Membership, UserTheme
+
+            if org:
+                role = Membership.objects.filter(
+                    org=org, user=request.user
+                ).values_list("role", flat=True).first()
+
+            theme = UserTheme.objects.filter(user=request.user).first()
+            if theme:
+                theme_data = {
+                    "mode": theme.mode,
+                    "custom": theme.custom or {},
+                }
 
         return Response({
             "user": {
@@ -130,8 +140,10 @@ class MeView(APIView):
             } if org else None,
 
             "role": role,
+            "theme": theme_data,
             "authenticated": request.user.is_authenticated,
         })
+
 
 
 @method_decorator(csrf_exempt, name="dispatch")

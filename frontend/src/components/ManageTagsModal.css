@@ -7,119 +7,319 @@
   margin-bottom: 8px;
 }
 
+/* Two-column layout: left = current/create, right = attach existing */
+
 .manage-tags-body-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 16px;
 }
 
+/* Generic sections */
+
 .manage-tags-section {
-  margin-top: 8px;
+  background: none;
+  padding: 0;
 }
 
 .manage-tags-section h4 {
   margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-.manage-tags-help {
+.manage-tags-help,
+.manage-tags-subhelp,
+.manage-tags-muted {
   font-size: 0.85rem;
-  color: var(--muted, #666);
   margin: 0 0 8px;
-}
-
-.manage-tags-subhelp {
-  font-size: 0.8rem;
-  color: var(--muted, #777);
-  margin: 0 0 6px;
+  color: var(--muted);
 }
 
 .manage-tags-muted {
-  font-size: 0.85rem;
-  color: var(--muted, #777);
+  font-style: italic;
 }
 
-/* For any leftover uses of manage-tags-chips-row in the JSX,
-   style it the same as the shared ks-modal-chips-row. */
-.manage-tags-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
+.manage-tags-subhelp {
+  margin-top: 2px;
 }
 
-.manage-tags-dept-section {
-  margin-top: 12px;
+/* Scrollable area for lists of tags */
+
+.manage-tags-scroll-list {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
-.manage-tags-category {
-  margin-bottom: 12px;
+/* ===========================
+   Search inputs
+   =========================== */
+
+/* "Search current tags…" should use ks-modal-search-input from KSModal.css.
+   This styles the "Search available tags…" input. */
+
+.manage-tags-search {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin: 8px 0 10px;
 }
 
-/* Create-mode form layout */
+.manage-tags-search::placeholder {
+  opacity: 0.8;
+  color: var(--sidebar-control-text);
+}
+
+/* ===========================
+   Create tag form
+   =========================== */
+
 .manage-tags-form {
   display: grid;
-  gap: 8px;
-  max-width: 480px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .manage-tags-field-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  gap: 8px;
-}
-
-.manage-tags-field-label select {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--hairline, #ddd);
+  display: grid;
+  gap: 4px;
   font-size: 0.9rem;
 }
 
-/* Inputs inside the tag form */
-.manage-tags-form input[type="text"],
-.manage-tags-form input[type="url"],
-.manage-tags-form textarea {
+.manage-tags-field-label span {
+  font-weight: 500;
+}
+
+/* Inputs/selects in create-tag form:
+   match sidebar-themed controls */
+
+.manage-tags-form input,
+.manage-tags-form textarea,
+.manage-tags-form select {
   width: 100%;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--hairline, #ddd);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
   font-size: 0.9rem;
   font-family: inherit;
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
 }
 
-/* Scrollable list for docs/departments radio options */
-.manage-tags-scroll-list {
-  max-height: 160px;
-  overflow: auto;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 4px;
+.manage-tags-form textarea {
+  resize: vertical;
+  min-height: 80px;
 }
+
+/* Radio row for link type */
 
 .manage-tags-radio-row {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.manage-tags-radio-row input {
-  margin-right: 4px;
 }
 
 /* Footer actions in create mode */
+
 .manage-tags-create-actions {
   display: flex;
   gap: 8px;
   margin-top: 8px;
 }
 
+/* ===========================
+   Footer (bottom row)
+   =========================== */
+
 .manage-tags-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between; /* left: create new, right: save */
+  align-items: center;
   gap: 8px;
   margin-top: 12px;
 }
 
+/* Right: Save changes button */
+
+.manage-tags-primary-btn {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.manage-tags-primary-btn:hover {
+  background: var(--brand-strong, var(--brand));
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
+  transform: translateY(-0.5px);
+}
+
+/* ===========================
+   Tag chip layout
+   =========================== */
+
+/* Generic chip rows */
+
+.manage-tags-chips-row,
+.manage-tags-section .ks-modal-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Base tag chip styling inside this modal.
+   This is copied from DocumentPage's .tag-chip so the look matches. */
+
+.manage-tags-section .tag-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--tag-doc-bg);
+  color: var(--tag-doc-fg);
+  border: 1px solid transparent;
+  outline: 2px solid var(--tag-doc-ol);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+/* ----------------------------------------------------
+   FIX: Apply category palette to CURRENT TAGS as well
+   ---------------------------------------------------- */
+
+/* Document tags on this doc */
+.manage-tags-section .tag-chip.tag-doc {
+  background: var(--tag-doc-bg);
+  color: var(--tag-doc-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-doc-ol);
+}
+
+/* Department tags */
+.manage-tags-section .tag-chip.tag-dept {
+  background: var(--tag-dept-bg);
+  color: var(--tag-dept-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-dept-ol);
+}
+
+/* External tags */
+.manage-tags-section .tag-chip.tag-ext {
+  background: var(--tag-ext-bg);
+  color: var(--tag-ext-fg);
+  border-color: transparent;
+  outline: 2px solid var(--tag-ext-ol);
+}
+
+
+.manage-tags-section .tag-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(47, 106, 253, 0.12);
+}
+
+.manage-tags-section .tag-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Selected chips:
+   We DO NOT override color or border to brand here,
+   so they keep the same palette as normal document tags. */
+
+.manage-tags-section .tag-chip.tag-chip--selected {
+  /* no color/background/border overrides on purpose */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(47, 106, 253, 0.16);
+}
+
+/* ===========================
+   Category-specific colors
+   (match DocumentPage tag palettes)
+   =========================== */
+
+/* Department tags on the document */
+.manage-tags-dept-section .tag-chip {
+  background: var(--tag-dept-bg);
+  color: var(--tag-dept-fg);
+  outline: 2px solid var(--tag-dept-ol);
+  border: 1px solid transparent;
+}
+
+.manage-tags-category .tag-chip[data-kind="department"] {
+  background: var(--tag-dept-bg, #eaf2ff);
+  color: var(--tag-dept-fg, #1f2a44);
+  border-color: transparent;
+  outline: 2px solid var(--tag-dept-ol, #c8daff);
+}
+
+/* Available Document tags: first available category */
+.manage-tags-category:first-of-type .tag-chip {
+  background: var(--tag-doc-bg);
+  color: var(--tag-doc-fg);
+  outline-color: var(--tag-doc-ol);
+}
+
+/* Available External tags: second available category */
+.manage-tags-category:last-of-type .tag-chip {
+  background: var(--tag-ext-bg);
+  color: var(--tag-ext-fg);
+  outline: 2px solid var(--tag-ext-ol);
+  border: 1px solid transparent;
+}
+
+/* ===========================
+   Responsive
+   =========================== */
+
+@media (max-width: 700px) {
+  .manage-tags-body-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background: var(--sidebar-control-bg-dark);
+  color: var(--sidebar-control-text-dark);
+  border-color: var(--sidebar-edge-dark);
+}
+
+html.dark .tag-chip {
+  background: transparent;
+  color: var(--sidebar-text-dark);
+  border-color: var(--sidebar-edge-dark);
+}
+
+html.dark .tag-chip.tag-chip--selected {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-strong);
+}

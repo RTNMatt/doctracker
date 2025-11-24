@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { api, login as apiLogin, logout as apiLogout, me as apiMe } from "../lib/api";
+import { useTheme } from "./ThemeContext";
 
 type Org = { id: number | null; slug: string | null } | null;
 type User = { id: number; username: string } | null;
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const [org, setOrg] = useState<Org>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { reloadThemeFromServer } = useTheme();
 
   // Internal helper: attempt /auth/me; on 401 try one /auth/refresh then /auth/me again
   const hydrate = async () => {
@@ -33,6 +35,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       setUser(data.user);
       setOrg(data.org);
       setRole(data.role || null);
+      await reloadThemeFromServer();
       return true;
     } catch {
       try {
@@ -42,6 +45,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         setUser(data.user);
         setOrg(data.org);
         setRole(data.role || null);
+        await reloadThemeFromServer();
         return true;
       } catch {
         setUser(null);
@@ -51,6 +55,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       }
     }
   };
+
 
   const refreshMe = async () => {
     setLoading(true);

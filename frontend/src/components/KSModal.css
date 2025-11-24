@@ -1,10 +1,13 @@
 /* src/components/KSModal.css */
 
-/* Backdrop + container */
+/* ===========================
+   Backdrop + container shell
+   =========================== */
+
 .ks-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,81 +15,108 @@
 }
 
 .ks-modal {
-  background: var(--surface, #fff);
+  background: var(--card-bg);
+  color: var(--card-text);
   padding: 16px;
-  border-radius: 8px;
-  min-width: 360px;
-  max-width: 800px;
+  border-radius: 16px;
+  max-width: 720px;
+  width: 100%;
   max-height: 80vh;
-  overflow: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid var(--border-soft);
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.55),
+    0 0 0 1px rgba(15, 23, 42, 0.45);
 }
 
-/* Header */
+/* ===========================
+   Header
+   =========================== */
+
 .ks-modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .ks-modal-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
+/* Close button (top-right) */
+
 .ks-modal-close-btn {
-  border: 1px solid var(--hairline, #ddd);
-  background: var(--surface, #f7f7f9);
   border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
   padding: 4px 10px;
   font-size: 0.85rem;
+  line-height: 1;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
 }
 
 .ks-modal-close-btn:hover {
-  background: color-mix(in oklab, var(--surface, #f7f7f9) 80%, white);
+  background: color-mix(in oklab, var(--sidebar-control-bg) 88%, white);
+  border-color: var(--brand);
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
+  transform: translateY(-0.5px);
 }
 
-/* Messages */
+/* ===========================
+   Modal body + scrolling
+   =========================== */
+
+.ks-modal-body {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+/* Error text */
+
 .ks-modal-error {
-  color: #c0392b;
+  margin: 0 0 8px;
   font-size: 0.9rem;
-  margin: 4px 0 8px;
+  color: #e11d48; /* red-ish */
 }
 
-.ks-modal-muted {
-  font-size: 0.85rem;
-  color: var(--muted, #777);
-}
+/* ===========================
+   Buttons (primary / secondary)
+   =========================== */
 
-/* Inputs */
-.ks-modal-search-input {
-  margin-bottom: 8px;
-  width: 100%;
-  max-width: 320px;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--hairline, #ddd);
-  font-size: 0.9rem;
-}
-
-/* Chips row */
-.ks-modal-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-/* Buttons */
 .ks-btn-primary,
 .ks-btn-secondary {
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 0.9rem;
   cursor: pointer;
-  border: 1px solid transparent;
+  border-width: 1px;
+  border-style: solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
 }
 
 .ks-btn-primary {
@@ -95,13 +125,76 @@
   border-color: var(--brand, #3a7bfa);
 }
 
+.ks-btn-primary:hover {
+  background: var(--brand-strong, var(--brand, #3a7bfa));
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
+  transform: translateY(-0.5px);
+}
+
 .ks-btn-primary:disabled {
   opacity: 0.7;
   cursor: default;
+  box-shadow: none;
+  transform: none;
 }
 
 .ks-btn-secondary {
-  background: var(--surface, #f7f7f9);
-  color: var(--text, #222);
-  border-color: var(--hairline, #ddd);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  border-color: var(--border-soft);
 }
+
+.ks-btn-secondary:hover {
+  background: color-mix(in oklab, var(--sidebar-control-bg) 88%, white);
+  border-color: var(--brand);
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.18);
+  transform: translateY(-0.5px);
+}
+
+/* ===========================
+   Shared chip row layout
+   =========================== */
+
+.ks-modal-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ===========================
+   Shared search input
+   =========================== */
+
+.ks-modal-search-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin: 8px 0 10px;
+}
+
+.ks-modal-search-input::placeholder {
+  opacity: 0.8;
+  color: var(--sidebar-control-text);
+}
+
+/* Responsive: narrower screens */
+@media (max-width: 600px) {
+  .ks-modal {
+    max-width: 100%;
+    margin: 0 8px;
+  }
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background: var(--sidebar-control-bg-dark);
+  color: var(--sidebar-control-text-dark);
+  border-color: var(--sidebar-edge-dark);
+}
+

@@ -4,16 +4,17 @@ from rest_framework import viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import (
     Department, Template, Document, Section, ResourceLink, Tag,
-    RequirementSnippet, Collection, Tile, DocumentVersion,
+    RequirementSnippet, Collection, Tile, DocumentVersion, UserTheme,
 )
 from .serializers import (
     DepartmentSerializer, TemplateSerializer, DocumentSerializer,
     SectionSerializer, ResourceLinkSerializer, TagSerializer,
     RequirementSnippetSerializer, RenderedRequirementsSerializer,
-    CollectionSerializer
+    CollectionSerializer, UserThemeSerializer
 )
 from .services.tags import sync_structural_tags, ensure_department_tag
 from .permissions import IsOrgMember, IsAdminOrEditor, IsDocumentVisible
@@ -315,6 +316,44 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
         page = self.paginate_queryset(subs)
         ser = CollectionSerializer(page or subs, many=True, context={"request": request})
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
+
+# -----------------------------
+# User theme (per-user settings)
+# -----------------------------
+class UserThemeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Return the current user's theme settings.
+        If not present, return sensible defaults.
+        """
+        user = request.user
+        theme, _ = UserTheme.objects.get_or_create(user=user)
+
+        serializer = UserThemeSerializer(theme)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """
+        Update the current user's theme settings.
+
+        Expected body:
+        {
+          "mode": "light" | "dark" | "custom",
+          "custom": { ...CustomTheme shape... }
+        }
+        """
+        user = request.user
+        theme, _ = UserTheme.objects.get_or_create(user=user)
+
+        serializer = UserThemeSerializer(
+            theme, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
 
 
 # -----------------------------

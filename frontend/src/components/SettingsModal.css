@@ -20,6 +20,7 @@
   justify-content: space-between;
   padding: 14px 20px;
   border-bottom: 1px solid var(--hairline);
+  background: var(--surface); /* 👈 ensure this is set */
 }
 
 .settings-modal-title {
@@ -60,11 +61,12 @@
 }
 
 .settings-nav-item:hover {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(148, 163, 184, 0.16); /* slate-400 at low alpha */
 }
 
 .settings-nav-item--active {
-  background: var(--surface, #fff);
+  /* slightly lighter than the sidebar background, instead of card/tag surface */
+  background: color-mix(in oklab, var(--sidebar-bg) 80%, white);
   box-shadow: 0 0 0 1px var(--brand, #3a7bfa);
 }
 
@@ -153,7 +155,6 @@
 .settings-theme-pill--active {
   border-color: var(--brand);
   box-shadow: 0 0 0 1px var(--brand);
-  background: rgba(58, 123, 250, 0.07);
 }
 
 .settings-theme-pill-label {
@@ -207,27 +208,47 @@
 
 .settings-color-description {
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--card-text);
+  opacity: 0.9;
 }
 
 .settings-color-inputs {
-  flex: 0 0 170px;
+  flex: 0 0 150px;        /* consistent width across rows */
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .settings-color-swatch {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border-radius: 999px;
   border: 1px solid var(--hairline);
   background: transparent;
+  display: inline-block;
+}
+
+
+/* Make the actual color patch inside circular too */
+.settings-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 999px;
+}
+
+.settings-color-swatch::-webkit-color-swatch {
+  border-radius: 999px;
+  border: none;
+}
+
+.settings-color-swatch::-moz-color-swatch {
+  border-radius: 999px;
+  border: none;
 }
 
 .settings-color-text {
-  flex: 1;
+  flex: 0 0 100px;        /* consistent text field width */
+  width: 100px;
   font-size: 0.8rem;
   padding: 4px 6px;
   border-radius: 6px;
@@ -271,4 +292,115 @@
 /* Dark theme sidebar gradient */
 [data-theme="dark"] .site-sidebar {
   background: linear-gradient(180deg, #050816 0%, #111827 100%);
+}
+
+
+
+/* ============================
+   Dark mode styling (Settings)
+   ============================ */
+
+[data-theme="dark"] .settings-modal {
+  color: #f9fafb; /* global text in modal */
+  border: 1px solid #4b5563;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  border-radius: 14px;
+}
+
+/* Header bar */
+[data-theme="dark"] .settings-modal-header {
+  background: #111827; /* dark grey */
+  border-bottom-color: #4b5563; /* light-ish grey border */
+}
+
+/* Make the Settings close button blend with the header background */
+.settings-modal .ks-modal-close-btn {
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.settings-modal .ks-modal-close-btn:hover,
+.settings-modal .ks-modal-close-btn:focus-visible {
+  background: transparent; /* keep the header background showing */
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Left nav (onyx) */
+[data-theme="dark"] .settings-nav {
+  background: #0b0c10;              /* onyx-ish */
+  border-right-color: #4b5563;      /* light grey edge */
+}
+
+/* Nav items */
+[data-theme="dark"] .settings-nav-item {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .settings-nav-item:hover {
+  background: #1f2937;              /* slightly lighter grey on hover */
+}
+
+/* Active nav item (current tab) */
+[data-theme="dark"] .settings-nav-item--active {
+  background: #374151;              /* regular/lighter grey */
+  box-shadow: 0 0 0 1px #9ca3af;    /* soft light-grey outline */
+}
+
+/* Right content background (dark grey) */
+[data-theme="dark"] .settings-content {
+  background: #111827;              /* dark grey panel */
+}
+
+/* "Custom colors" groups (cards) */
+[data-theme="dark"] .settings-color-group {
+  background: #374151;              /* lighter grey card */
+  border-color: #4b5563;            /* light grey border */
+}
+
+/* Inputs inside color cards */
+[data-theme="dark"] .settings-color-text {
+  background: #111827;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .settings-color-description,
+[data-theme="dark"] .settings-block-caption,
+[data-theme="dark"] .settings-panel-intro {
+  color: #d1d5db; /* slightly softer white for secondary text */
+}
+
+
+/* Theme pills base in dark mode */
+[data-theme="dark"] .settings-theme-pill {
+  background: #1f2937;          /* darker slate */
+  border-color: #4b5563;        /* light grey border */
+  color: #f9fafb;               /* readable text */
+}
+
+/* Hover state – subtle lift, still dark */
+[data-theme="dark"] .settings-theme-pill:hover {
+  background: #111827;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.6);
+}
+
+/* Active theme pill (applies to Light / Dark / Custom when selected) */
+[data-theme="dark"] .settings-theme-pill--active {
+  background: #374151;          /* regular/lighter grey */
+  border-color: #3b82f6;        /* blue brand outline */
+  box-shadow: 0 0 0 1px #3b82f6;
+  color: #f9fafb;
+}
+
+/* Close button in the header */
+[data-theme="dark"] .settings-modal .ks-modal-close-btn {
+  background: #111827;
+  color: #f9fafb;
+  border: 1px solid #4b5563;
+}
+
+[data-theme="dark"] .settings-modal .ks-modal-close-btn:hover {
+  background: #1f2937;
 }

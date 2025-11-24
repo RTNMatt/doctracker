@@ -4,91 +4,125 @@ html, body { margin: 0; padding: 0; }
 html, body, #root { font-family: "Inter", system-ui, sans-serif; height: 100%;}
 
 html {
-  /* Reserve space for the vertical scrollbar so layout width doesn't change */
   scrollbar-gutter: stable;
 }
 
-/* --- Knowledge Stack palette (tweak freely) --- */
+/* --- Knowledge Stack palette (area-based) --- */
 :root {
+  /* Sidebar */
+  --sidebar-bg: #eef3ff;
+  --sidebar-text: #1f2937;
+  --sidebar-control-bg: #ffffff;
+  --sidebar-control-text: #1f2937;
+
+  /* Chrome (toolbar / bottom doc bar) */
+  --chrome-bg: #e5ecf6;
+  --chrome-text: #111827;
+
   /* Main content */
-  --bg:            #FAFCFF;  /* brighter main surface */
-  --text:          #0B1220;  /* deep navy text */
-  --muted:         #5B6B80;  /* slate-ish secondary */
-  --hairline:      #E5ECF6;  /* light divider */
+  --content-bg: #fafcff;
+  --content-text: #0b1220;
 
-  /* Sidebar — LIGHT */
-  --sidebar-bg:    #EEF3FF;  /* soft blue-white */
-  --sidebar-edge:  #D6E4FF;  /* subtle edge/border */
-  --sidebar-text:  #1F2A44;  /* dark enough for contrast */
-  --sidebar-muted: #6A7A95;  /* muted on light sidebar */
-  --chip-bg:       #EAF2FF;  /* pills/avatars/bg chips */
+  /* Cards / tiles / tags */
+  --card-bg: #ffffff;
+  --card-text: #0b1220;
 
-  /* Brand */
-  --brand:         #2F6AFD;  /* primary blue */
-  --brand-hover:   #1E4FE3;  /* hover/active blue */
-  --accent:        #16B8A6;  /* supportive teal */
+  /* Document */
+  --doc-bg: #ffffff;
+  --doc-text: #0b1220;
 
-  --doc-paper-bg: #ffffff;
-  --doc-paper-text: var(--text);
+  /* Borders (controls tile/document borders) */
+  --border-soft: #d5dbe6;
+
+  /* Accent */
+  --brand: #3a7bfa;
+  --brand-strong: #2563eb;
+
+  /* Legacy aliases */
+  --bg: var(--content-bg);
+  --text: var(--content-text);
+  --muted: #6b7280;
+
+  --sidebar-edge: var(--border-soft);
+  --surface: var(--card-bg);
+  --surface-muted: var(--sidebar-control-bg);
+  --hairline: var(--border-soft);
+
+  --doc-paper-bg: var(--doc-bg);
+  --doc-paper-text: var(--doc-text);
 }
 
-/* Dark theme overrides applied when data-theme="dark" */
+/* --- DARK THEME OVERRIDES --- */
 [data-theme="dark"] {
-  /* 70%: global background */
-  --bg: #050816;              /* deep bluish-purple */
-  --text: #e5e7eb;
+  /* Sidebar */
+  --sidebar-bg: #050816;
+  --sidebar-text: #e5e7eb;
+  --sidebar-control-bg: #0d1220;     /* darker = more consistent */
+  --sidebar-control-text: #f9fafb;
+
+  /* Chrome (toolbar / bottom doc bar) */
+  --chrome-bg: #111827;
+  --chrome-text: #e5e7eb;
+
+  /* Main content */
+  --content-bg: #050816;             /* TRUE dark background */
+  --content-text: #e5e7eb;
+
+  /* Cards / tiles / tags */
+  --card-bg: #0b1020;                /* Slight lift over content-bg */
+  --card-text: #e5e7eb;
+
+  /* Document */
+  --doc-bg: #0b1020;
+  --doc-text: #e5e7eb;
+
+  /* Borders */
+  --border-soft: #333a45;            /* enough contrast to see tile borders */
+
+  /* Accent */
+  --brand: #3a7bfa;
+  --brand-strong: #2563eb;
+
+  /* Legacy */
+  --bg: var(--content-bg);
+  --text: var(--content-text);
   --muted: #9ca3af;
 
-  /* 20%: surfaces & structure */
-  --surface: #0b1020;         /* cards/panels */
-  --surface-muted: #111827;   /* secondary panels */
-  --hairline: #1f2937;
-  --sidebar-bg: #050816;
-  --sidebar-edge: #312e81;    /* subtle indigo edge */
-  --sidebar-text: #e5e7eb;
+  --sidebar-edge: var(--border-soft);
+  --surface: var(--card-bg);
+  --surface-muted: var(--sidebar-control-bg);
+  --hairline: var(--border-soft);
 
-  /* 10%: accents (metallic purple) */
-  --brand: #a855f7;           /* primary accent */
-  --brand-strong: #c084fc;    /* hover/active */
-  /* optional soft tint you can use where needed */
-  --brand-soft: rgba(168, 85, 247, 0.16);
-
-  /* Document “paper” */
-  --doc-paper-bg: #0b1020;    /* slightly lifted from bg */
-  --doc-paper-text: #e5e7eb;
+  --doc-paper-bg: var(--doc-bg);
+  --doc-paper-text: var(--doc-text);
 }
-
 
 /* --- App layout (sidebar | main) --- */
 .layout {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr); /* sidebar | content */
-  min-height: 100vh;                    /* full-height app */
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
 }
 
 /* --- Main workspace --- */
 .layout-main {
-  background-color: var(--bg);
-  color: var(--text);
-  padding-top: 56px;         /* fair top margin */
+  background-color: var(--content-bg);
+  color: var(--content-text);
+  padding-top: 56px;
   padding-left: 16px;
   padding-right: 16px;
   max-width: 100%;
-
-  display: block;            /* plain block; pages handle their own layout */
+  display: block;
   text-align: center;
-  /*overflow: auto;*/
 }
 
-/* Center the page title above the tiles (works for <h1> or .page-title) */
 .layout-main > h1,
 .layout-main > .page-title {
   text-align: center;
   margin: 0 0 12px;
-  color: var(--text);
+  color: var(--content-text);
 }
 
-/* Center the tiles grid and cap max width */
 .layout-main > .tiles {
   max-width: 1200px;
   margin: 16px auto 64px;
@@ -98,4 +132,5 @@ html {
 .home-title {
   font-size: 60px;
   padding-bottom: 10%;
+  color: var(--content-text);
 }

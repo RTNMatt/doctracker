@@ -3,8 +3,8 @@
    ========================= */
 
 .document-page {
-  color: var(--text);
-  background: var(--bg);
+  color: var(--content-text);
+  background: var(--content-bg);
   text-align: left;
 }
 
@@ -44,7 +44,7 @@
   margin: 0;
   font-size: clamp(22px, 3.4vw, 30px);
   line-height: 1.2;
-  color: var(--text);
+  color: var(--content-text);
 }
 
 /* Status pill */
@@ -59,9 +59,15 @@
   letter-spacing: 0.03em;
   background: var(--surface, #f5f5f8);
   color: var(--muted, #555);
+
+  /* Match other chip/box styling */
+  border: 1px solid var(--sidebar-edge, #d6e4ff);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 3px 8px rgba(15, 23, 42, 0.06);
 }
 
-/* Buttons reused in footer */
+/* Buttons reused in footer (base shape) */
 
 .document-save-btn,
 .document-edit-toggle {
@@ -89,14 +95,25 @@
   gap: 16px;
 }
 
-/* Tags panel */
+/* Tags / sidebar panels */
 
-.doc-sidebar-panel {
-  background: var(--surface, #f7f8fc);
+.doc-sidebar-panel,
+.doc-sidebar-section {
+  background: var(--card-bg);
   border-radius: 14px;
-  border: 1px solid var(--sidebar-edge, #d6e4ff);
+  border: 1px solid var(--border-soft);
   padding: 10px 12px 22px;
-  position: relative; /* for bottom-right info icon */
+  position: relative;
+  color: var(--card-text);
+}
+
+/* “Tags” heading + toggle + section headings and group labels */
+
+.doc-sidebar-toggle,
+.doc-sidebar-title,
+.doc-sidebar-heading,
+.tag-group-label {
+  color: var(--card-text);
 }
 
 .doc-sidebar-toggle {
@@ -110,7 +127,6 @@
   padding: 2px 0 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  color: var(--sidebar-text, var(--text));
 }
 
 .doc-sidebar-toggle:disabled {
@@ -124,6 +140,11 @@
 
 .doc-sidebar-toggle-indicator {
   font-size: 0.8rem;
+}
+
+/* “Hide” / small notes stay muted but theme-driven */
+.doc-sidebar-toggle-indicator,
+.doc-visibility-note {
   color: var(--muted);
 }
 
@@ -137,8 +158,6 @@
   margin-top: 10px;
 }
 
-/* Sidebar primary button uses ks button palette */
-
 .doc-sidebar-primary-button {
   display: inline-flex;
   align-items: center;
@@ -146,16 +165,6 @@
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.85rem;
-}
-
-/* Generic sidebar sections (visibility, collections) */
-
-.doc-sidebar-section {
-  background: var(--surface, #f7f8fc);
-  border-radius: 14px;
-  border: 1px solid var(--sidebar-edge, #d6e4ff);
-  padding: 10px 12px 22px;
-  position: relative; /* for bottom-right info icon */
 }
 
 .doc-sidebar-heading-row {
@@ -186,7 +195,6 @@
 .doc-visibility-note {
   font-size: 0.85rem;
   margin-top: 4px;
-  color: var(--muted, #666);
 }
 
 /* --- Info bubble for sidebar boxes (bottom-right) --- */
@@ -202,9 +210,9 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1px solid var(--hairline, #d0d7e2);
-  background: var(--surface, #f7f8fc);
-  color: var(--muted, #6b7280);
+  border: 1px solid var(--border-soft);
+  background: var(--card-bg);
+  color: var(--card-text);
   font-size: 0.75rem;
   font-weight: 600;
   display: inline-flex;
@@ -215,8 +223,8 @@
 }
 
 .doc-info-icon--active {
-  background: var(--brand, #3a7bfa);
-  border-color: var(--brand, #3a7bfa);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 
@@ -230,12 +238,12 @@
 
   padding: 8px 10px;
   border-radius: 8px;
-  background: var(--surface, #ffffff);
-  border: px solid var(--hairline, #d0d7e2);
+  background: var(--card-bg);
+  border: 1px solid var(--border-soft);
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
 
   font-size: 0.8rem;
-  color: var(--muted, #4b5563);
+  color: var(--card-text);
 }
 
 .doc-info-popover p {
@@ -254,18 +262,17 @@
 
 .doc-paper {
   background: var(--doc-paper-bg, #ffffff);
-  color: var(--doc-paper-text, var(--text));
+  color: var(--doc-paper-text, var(--doc-text));
   border-radius: 18px 18px 0 0;
   border: 1px solid var(--sidebar-edge, #d6e4ff);
   border-bottom: none;
   padding: 40px 80px 80px;
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
 
-  /* tuned to reach the bottom bar without forcing extra scroll */
+  /* tuned so the page reaches bottom bar without forcing scroll too early */
   min-height: calc(100vh - 56px - 152px);
 }
 
-/* inner gutter so sections don't touch the edges */
 .doc-paper-inner {
   max-width: 100%;
   margin: 0 auto;
@@ -326,7 +333,6 @@
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
-
 
 .doc-inline-buttons {
   display: flex;
@@ -395,7 +401,7 @@
   margin: 0 0 10px;
   font-size: clamp(16px, 2.2vw, 20px);
   font-weight: 600;
-  color: var(--text);
+  color: var(--doc-text);
 }
 
 .doc-section-pre {
@@ -416,7 +422,7 @@
   display: block;
   border-radius: 8px;
 
-  cursor: zoom-in; /* 👈 new */
+  cursor: zoom-in;
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
@@ -441,7 +447,7 @@
   margin-block: 28px;
 }
 
-/* --- Input & textarea styling (clean SaaS look) --- */
+/* --- Input & textarea styling --- */
 
 .doc-paper input[type="text"],
 .doc-paper input[type="url"],
@@ -453,7 +459,7 @@
   border: 1px solid var(--hairline, #d0d7e2);
   padding: 8px 10px;
   background: var(--surface, #f7f8fc);
-  color: var(--text);
+  color: var(--doc-text);
   transition:
     border-color 120ms ease,
     box-shadow 120ms ease,
@@ -478,7 +484,7 @@
   box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
 }
 
-/* --- Right column (reserved for future comments/tags) --- */
+/* --- Right column (reserved for future) --- */
 
 .document-right-column {
   grid-column: 4 / 5;
@@ -500,7 +506,6 @@
 }
 
 .tag-group-label {
-  color: var(--muted);
   font-size: 0.9rem;
   text-align: right;
   padding-right: 6px;
@@ -513,14 +518,16 @@
 }
 
 .tag-chip {
-  border: 1px solid var(--hairline);
-  background: #fff;
-  color: var(--text);
+  border: 1px solid var(--border-soft);
+  background: var(--card-bg);
+  color: var(--card-text);
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 0.85rem;
   line-height: 1;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
@@ -587,7 +594,7 @@
 
 .document-footer {
   position: fixed;
-  left: 280px;
+  left: 280px;           /* matches sidebar width */
   right: 0;
   bottom: 0;
 
@@ -596,22 +603,15 @@
   justify-content: space-between;
 
   padding: 10px 32px;
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid var(--sidebar-edge);
 
-  /*background: linear-gradient(
-    to bottom,
-    rgba(248, 250, 252, 0.92),
-    rgba(248, 250, 252, 1)
-  );
-  */
-  background: var(--sidebar-bg, var(--surface));
+  /* EXACTLY match the sidebar strip */
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
 
-  backdrop-filter: blur(8px);
-
+  /* Remove blur so the color doesn't shift against content */
   font-size: 0.9rem;
-  color: var(--muted);
   z-index: 40;
-
   height: 63.5px;
 }
 
@@ -627,15 +627,56 @@
   gap: 8px;
 }
 
+/* Buttons in the footer:
+   use sidebar control palette (search / PathTree style) */
+
+.document-footer-actions .document-save-btn,
+.document-footer-actions .document-edit-toggle {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-soft);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.document-footer-actions .document-save-btn:hover,
+.document-footer-actions .document-edit-toggle:hover {
+  background: color-mix(in oklab, var(--sidebar-control-bg) 85%, white);
+  border-color: var(--brand);
+  box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
+  transform: translateY(-0.5px);
+}
+
+/* Optional: primary save button variant, if you add the class in TSX */
+.document-footer-actions .document-save-btn--primary {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
 /* Unsaved pill */
 
 .doc-unsaved-pill {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  padding: 5px 10px;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--surface, #f5f5f8);
+
+  /* Match sidebar search / footer buttons */
+  border: 1px solid var(--border-soft);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -674,6 +715,12 @@
   }
 
   .doc-paper {
+    background: var(--doc-bg);
+    color: var(--doc-text);
+    border-radius: 18px 18px 0 0;
+    border: 1px solid var(--border-soft);
+    border-bottom: none;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.6);
     padding: 20px 16px 72px;
     min-height: auto;
   }
@@ -710,7 +757,6 @@
   display: none;
 }
 
-
 /* =========================
    Image lightbox overlay
    ========================= */
@@ -722,7 +768,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200; /* above footer, sidebar, etc */
+  z-index: 200;
 }
 
 .doc-image-lightbox {
@@ -756,7 +802,6 @@
   margin-top: 4px;
 }
 
-/* close button in top-right of the lightbox */
 .doc-image-lightbox-close {
   position: absolute;
   top: 6px;
@@ -777,4 +822,23 @@
 
 .doc-image-lightbox-close:hover {
   background: rgba(15, 23, 42, 1);
+}
+
+/* Explicit section header/body helpers if used */
+
+.doc-section-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--doc-text);
+}
+
+.doc-section-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--doc-text);
+}
+
+/* Dark mode: match sidebar gradient, left (near sidebar) lighter, right darker */
+[data-theme="dark"] .document-footer {
+  background: linear-gradient(90deg, #111827 0%, #050816 100%);
 }
