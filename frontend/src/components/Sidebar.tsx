@@ -52,7 +52,7 @@ export default function Sidebar() {
     { to: "/", label: "Home", exact: true },
     { to: "/departments", label: "Departments" },
     { to: "/collections", label: "Collections" },
-    { to: "/documents", label: "Documents" },
+    { to: "/create", label: "Create content" },
   ];
 
   // Reset the path tree when clicking top-level destinations
@@ -63,8 +63,8 @@ export default function Sidebar() {
       resetTo({ kind: "index", name: "Departments", url: "/departments" });
     } else if (to === "/collections") {
       resetTo({ kind: "index", name: "Collections", url: "/collections" });
-    } else if (to === "/documents") {
-      resetTo({ kind: "index", name: "Documents", url: "/documents" });
+    } else if (to === "/create") {
+      resetTo({ kind: "index", name: "Create content", url: "/create" });
     }
   }
 
@@ -128,7 +128,7 @@ export default function Sidebar() {
           <div className="user-chip" title={isSignedIn ? userName : "Not signed in"}>
             <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
             <div className="user-meta">
-              <div className="user-name">{userName}</div>
+              <Link to="/profile" className="user-name" style={{ textDecoration: 'none', color: 'inherit' }}>{userName}</Link>
               <button className="link-button" onClick={handleSignInOut}>
                 {isSignedIn ? "Sign out" : "Sign in"}
               </button>
@@ -140,6 +140,6 @@ export default function Sidebar() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
-      </>
+    </>
   );
 }

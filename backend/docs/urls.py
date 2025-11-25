@@ -1,4 +1,3 @@
-# docs/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 #from .auth_views import LoginView, LogoutView, MeView, RefreshView
@@ -8,15 +7,15 @@ from .views import (
     DocumentViewSet, SectionViewSet, ResourceLinkViewSet,
     CollectionViewSet,
     health, tiles, search,
-    UserThemeView
+    UserThemeView, UserProfileMeView, UserProfileDetailView, DepartmentMembersView
 )
 
-# NEW: import auth views
+
 from .auth import LoginView, LogoutView, MeView, RefreshView
 
 router = DefaultRouter()
 
-# Explicit basenames because our viewsets don't define .queryset
+
 router.register(r"departments", DepartmentViewSet, basename="department")
 router.register(r"templates", TemplateViewSet, basename="template")
 router.register(r"tags", TagViewSet, basename="tag")
@@ -33,6 +32,9 @@ urlpatterns = [
     path("search/", search, name="search"),
 
     path("theme/", UserThemeView.as_view(), name="user-theme"),
+    path("profiles/me/", UserProfileMeView.as_view(), name="profile-me"),
+    path("profiles/<int:user_id>/", UserProfileDetailView.as_view(), name="profile-detail"),
+    path("departments/<slug:slug>/members/", DepartmentMembersView.as_view(), name="department-members"),
 
     # NEW: auth endpoints (added, not replacing anything)
     path("auth/login/", LoginView.as_view(), name="auth-login"),

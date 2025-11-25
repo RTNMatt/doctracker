@@ -1,10 +1,11 @@
 # docs/models.py
-from django.db import models
+from django.db import models, IntegrityError
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from django.db.models import Q
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
 
 # -----------------------------
@@ -254,10 +255,41 @@ class Document(models.Model):
                     raise ValidationError({"tags": "All tags must belong to the same organization."})
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            # optional convenience; keeps slug unique per org when provided
-            self.slug = slugify(self.title)[:200]
-        super().save(*args, **kwargs)
+        """
+        Auto-generate a slug from the title when missing, and ensure it is
+        unique per org by appending -2, -3, ... if needed.
+
+        Also resilient to race conditions (e.g., two creates at once) by
+        retrying on the unique (org, slug) integrity error.
+        """
+        # If slug is already set, just let the normal save/constraint handling work.
+        if self.slug:
+            return super().save(*args, **kwargs)
+
+        base_slug = slugify(self.title or "")[:200] or "document"
+
+        # Try a few times in case of races
+        for attempt in range(8):
+            if attempt == 0:
+                candidate = base_slug
+            else:
+                suffix = f"-{attempt + 1}"
+                candidate = f"{base_slug[: 200 - len(suffix)]}{suffix}"
+
+            self.slug = candidate
+
+            try:
+                return super().save(*args, **kwargs)
+            except IntegrityError as exc:
+                # If it's our org+slug uniqueness constraint, try next candidate.
+                msg = str(exc)
+                if "docs_document.org_id, docs_document.slug" in msg or "uniq_document_org_slug" in msg:
+                    continue
+                # Some other integrity error -> re-raise
+                raise
+
+        # If we somehow exhausted attempts, raise a clear error
+        raise IntegrityError("Could not generate a unique slug for Document.")
 
 
 class DocumentVersion(models.Model):
@@ -370,6 +402,14 @@ class Collection(models.Model):
         related_name="parent_collections",
     )
 
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="collections_created"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -399,9 +439,47 @@ class Collection(models.Model):
                     raise ValidationError({"documents": "All documents must belong to the same organization."})
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)[:160]
-        super().save(*args, **kwargs)
+        """
+        Auto-generate a slug from the name when missing, and ensure it is
+        unique per org by appending -2, -3, ... if needed.
+
+        Also resilient to race conditions by retrying on the unique
+        (org, slug) integrity error.
+        """
+        from django.db import IntegrityError  # safe to import here if not at top already
+
+        # If slug is already set, just trust it and let the DB enforce uniqueness
+        if self.slug:
+            return super().save(*args, **kwargs)
+
+        base_slug = slugify(self.name or "")[:160] or "collection"
+
+        # Try a few candidates in case of races
+        for attempt in range(8):
+            if attempt == 0:
+                candidate = base_slug
+            else:
+                suffix = f"-{attempt + 1}"
+                candidate = f"{base_slug[: 160 - len(suffix)]}{suffix}"
+
+            self.slug = candidate
+
+            try:
+                return super().save(*args, **kwargs)
+            except IntegrityError as exc:
+                msg = str(exc)
+                # If it's our (org, slug) uniqueness constraint, try the next suffix
+                if (
+                    "docs_collection.org_id, docs_collection.slug" in msg
+                    or "uniq_collection_org_slug" in msg
+                ):
+                    continue
+                # Some other integrity error → re-raise
+                raise
+
+        # If we somehow exhausted attempts, raise a clear error
+        from django.db import IntegrityError as FinalIntegrityError
+        raise FinalIntegrityError("Could not generate a unique slug for Collection.")
 
 
 # -----------------------------
@@ -480,6 +558,53 @@ class RequirementSnippet(models.Model):
     def __str__(self) -> str:
         return self.title
 
+# -----------------------------
+# UserProfiles (Profile Page / Ownership)
+# -----------------------------
+
+User = get_user_model()
+
+
+class UserProfile(models.Model):
+    """
+    Per-user profile scoped to their organization.
+    Visible only inside their org.
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="profile"
+    )
+
+    org = models.ForeignKey(
+        "Organization",
+        on_delete=models.CASCADE,
+        related_name="profiles"
+    )
+
+    preferred_name = models.CharField(max_length=100, blank=True)
+    job_title = models.CharField(max_length=150, blank=True)
+    location = models.CharField(max_length=150, blank=True)
+
+    bio = models.TextField(blank=True)
+
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        blank=True,
+        null=True
+    )
+
+    # Admin-only
+    departments = models.ManyToManyField(
+        "Department",
+        related_name="members",
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Profile: {self.user.username} ({self.org.slug})"
 
 # --- helpers for serializers -------------------------------------------------
 

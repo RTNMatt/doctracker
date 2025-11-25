@@ -5,16 +5,18 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import (
     Department, Template, Document, Section, ResourceLink, Tag,
     RequirementSnippet, Collection, Tile, DocumentVersion, UserTheme,
+    UserProfile,
 )
 from .serializers import (
     DepartmentSerializer, TemplateSerializer, DocumentSerializer,
     SectionSerializer, ResourceLinkSerializer, TagSerializer,
     RequirementSnippetSerializer, RenderedRequirementsSerializer,
-    CollectionSerializer, UserThemeSerializer
+    CollectionSerializer, UserThemeSerializer, UserProfileSerializer
 )
 from .services.tags import sync_structural_tags, ensure_department_tag
 from .permissions import IsOrgMember, IsAdminOrEditor, IsDocumentVisible
@@ -286,18 +288,30 @@ class ResourceLinkViewSet(viewsets.ModelViewSet):
 # -----------------------------
 # Collections (read-only)
 # -----------------------------
-class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
+class CollectionViewSet(viewsets.ModelViewSet):
     """
     Curated groupings of documents (e.g., 'New Hire Onboarding').
+
+    - Safe methods (GET, HEAD, OPTIONS): any authenticated org member
+    - Writes (POST, PATCH, DELETE): admin or editor only
     """
     serializer_class = CollectionSerializer
     lookup_field = "slug"
     lookup_url_kwarg = "slug"
-    permission_classes = [IsAuthenticated, IsOrgMember]
+    permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
 
     def get_queryset(self):
         org = getattr(self.request, "org", None)
-        return Collection.objects.filter(org=org).prefetch_related("documents", "subcollections")
+        return Collection.objects.filter(org=org).prefetch_related(
+            "documents",
+            "subcollections",
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(org=self.request.org)
+
+    def perform_update(self, serializer):
+        serializer.save(org=self.request.org)
 
     @action(detail=True, methods=["get"])
     def documents(self, request, *args, **kwargs):
@@ -306,16 +320,10 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
             "tags", "sections", "links", "departments"
         )
         page = self.paginate_queryset(docs)
-        ser = DocumentSerializer(page or docs, many=True, context={"request": request})
-        return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
-
-    @action(detail=True, methods=["get"])
-    def subcollections(self, request, *args, **kwargs):
-        col = self.get_object()  # org-scoped
-        subs = col.subcollections.filter(org=request.org)
-        page = self.paginate_queryset(subs)
-        ser = CollectionSerializer(page or subs, many=True, context={"request": request})
-        return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
+        serializer = DocumentSerializer(page or docs, many=True, context={"request": request})
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
 # -----------------------------
 # User theme (per-user settings)
@@ -354,6 +362,59 @@ class UserThemeView(APIView):
         serializer.save()
 
         return Response(serializer.data)
+
+# -----------------------------
+# User Profiles (per-user)
+# -----------------------------
+
+class UserProfileMeView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        profile, _ = UserProfile.objects.get_or_create(
+            user=request.user, org=request.org
+        )
+        return Response(UserProfileSerializer(profile).data)
+
+    def patch(self, request):
+        profile, _ = UserProfile.objects.get_or_create(
+            user=request.user, org=request.org
+        )
+        serializer = UserProfileSerializer(
+            profile, data=request.data, partial=True, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class UserProfileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        profile = UserProfile.objects.filter(
+            user__id=user_id, org=request.org
+        ).first()
+
+        if not profile:
+            return Response({"detail": "Profile not found"}, status=404)
+
+        return Response(UserProfileSerializer(profile).data)
+
+
+class DepartmentMembersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, slug):
+        dept = Department.objects.filter(
+            org=request.org, slug=slug
+        ).first()
+        if not dept:
+            return Response({"detail": "Department not found"}, status=404)
+
+        profiles = dept.members.select_related("user").order_by("preferred_name", "user__username")
+        return Response(UserProfileSerializer(profiles, many=True).data)
 
 
 # -----------------------------

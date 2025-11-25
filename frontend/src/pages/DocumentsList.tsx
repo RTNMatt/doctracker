@@ -35,16 +35,14 @@ export default function DocumentsList() {
             </Link>
           </div>
 
-          {/* Placeholder for when you’re ready to add collection creation */}
-          <div className="tool-card tool-card--disabled">
+          <div className="tool-card">
             <h2>Create a new collection</h2>
             <p>
               Group documents into an onboarding flow, playbook, or project guide.
-              (Coming soon)
             </p>
-            <button className="button-secondary" disabled>
-              Coming soon
-            </button>
+            <Link to="/collections/new" className="button-secondary">
+              + New Collection
+            </Link>
           </div>
         </div>
       )}

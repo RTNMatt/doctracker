@@ -187,3 +187,17 @@ export async function createDocument(payload: {
   return res.data;
 }
 
+
+// ---------- Profiles ----------
+export async function getProfile(userId?: number) {
+  const url = userId ? `/profiles/${userId}/` : "/profiles/me/";
+  const res = await api.get(url);
+  return res.data;
+}
+
+export async function updateProfile(data: FormData) {
+  const res = await api.patch("/profiles/me/", data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}

@@ -9,7 +9,6 @@ import { AuthProvider } from "./context/AuthContext";
 import RequireAuth, { PublicOnly } from "./components/RequireAuth";
 
 import HomeTilesPage from "./pages/HomeTilesPage";
-import DocumentsList from "./pages/DocumentsList";
 import DocumentPage from "./pages/DocumentPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
 import DepartmentsListPage from "./pages/DepartmentsListPage";
@@ -20,6 +19,9 @@ import LoginPage from "./pages/LoginPage";
 import App from "./App";
 import NewDocumentPage from "./pages/NewDocumentPage";
 import { ThemeProvider } from "./context/ThemeContext";
+import NewCollectionPage from "./pages/NewCollectionPage";
+import CreateContentPage from "./pages/CreateContentPage";
+import UserProfilePage from "./pages/UserProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -41,7 +43,7 @@ const router = createBrowserRouter([
       { index: true, element: <HomeTilesPage /> },
       { path: "search", element: <SearchResultsPage /> },
 
-      { path: "documents", element: <DocumentsList /> },
+      { path: "create", element: <CreateContentPage /> },
       { path: "documents/new", element: <NewDocumentPage /> },
       { path: "documents/:id", element: <DocumentPage /> },
 
@@ -49,7 +51,11 @@ const router = createBrowserRouter([
       { path: "departments/:slug", element: <DepartmentPage /> },
 
       { path: "collections", element: <CollectionsListPage /> },
+      { path: "collections/new", element: <NewCollectionPage /> },
       { path: "collections/:slug", element: <CollectionsPage /> },
+
+      { path: "profile", element: <UserProfilePage /> },
+      { path: "profiles/:userId", element: <UserProfilePage /> },
     ],
   },
 ]);

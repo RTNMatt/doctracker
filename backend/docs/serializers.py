@@ -16,6 +16,7 @@ from .models import (
     Tile,
     RequirementSnippet,
     UserTheme,
+    UserProfile,
     assemble_requirements_from_tags,
 )
 
@@ -93,6 +94,38 @@ class UserThemeSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTheme
         fields = ["mode", "custom"]
+
+# -----------------------
+# User Profile serializer
+# -----------------------
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            "user",
+            "preferred_name",
+            "job_title",
+            "location",
+            "bio",
+            "avatar_url",
+            "departments",
+        ]
+        read_only_fields = ["user", "departments"]
+
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }
+
+    def get_avatar_url(self, obj):
+        if obj.avatar and hasattr(obj.avatar, "url"):
+            return obj.avatar.url
+        return None
 
 
 # -----------------------

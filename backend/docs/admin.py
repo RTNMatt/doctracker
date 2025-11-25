@@ -185,6 +185,12 @@ class CollectionAdmin(OrgScopedAdmin):
     prepopulated_fields = {"slug": ("name",)}
     filter_horizontal = ("documents", "subcollections")
 
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # new collection
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
 admin.site.register(Collection, CollectionAdmin)
 
 

@@ -1,0 +1,60 @@
+/* src/pages/CreateContentPage.css */
+
+/* Scope everything to this page so we don't affect other screens */
+.create-content-page .page-header {
+  margin-bottom: 24px;
+}
+
+.create-content-page .page-subtitle {
+  margin-top: 4px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* Two cards side by side on wider screens, stacked on mobile */
+.create-content-page .card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+@media (min-width: 840px) {
+  .create-content-page .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+}
+
+/* Cards for the two create actions */
+.create-content-page .tool-card {
+  background: var(--card-bg);
+  border-radius: 18px;
+  border: 1px solid var(--border-soft);
+  padding: 16px 18px 18px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.18);
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create-content-page .tool-card h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--card-text);
+}
+
+.create-content-page .tool-card p {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--card-text);
+  opacity: 0.8;
+}
+
+/* Keep buttons aligned at the bottom of each card */
+.create-content-page .tool-card .ks-btn-primary {
+  align-self: center;
+  margin-top: auto;
+}

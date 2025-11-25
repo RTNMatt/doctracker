@@ -1,0 +1,134 @@
+/* src/pages/UserProfilePage.css */
+
+.user-profile-page {
+    max-width: 800px;
+    margin: 0 auto 64px;
+    padding: 0 16px;
+}
+
+.user-profile-page .page-header {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.user-profile-page .profile-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* --- Read-only View --- */
+.profile-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+}
+
+.profile-avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    font-size: 48px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    object-fit: cover;
+}
+
+.profile-info h2 {
+    margin: 0 0 8px;
+    font-size: 1.75rem;
+    color: var(--content-text);
+}
+
+.profile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+}
+
+.profile-bio {
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+    color: var(--content-text);
+}
+
+.profile-departments {
+    margin-top: 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.dept-tag {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* --- Edit Form --- */
+.profile-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-row label {
+    font-weight: 500;
+    color: var(--content-text);
+    font-size: 0.95rem;
+}
+
+.form-row input[type="text"],
+.form-row textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    background: var(--content-bg);
+    color: var(--content-text);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.form-row input:focus,
+.form-row textarea:focus {
+    outline: 2px solid var(--brand);
+    border-color: transparent;
+}
+
+.avatar-upload {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-soft);
+}
