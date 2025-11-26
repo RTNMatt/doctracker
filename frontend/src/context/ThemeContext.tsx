@@ -76,6 +76,8 @@ type ThemeContextValue = {
   customTheme: CustomTheme;
   updateCustomTheme: (patch: Partial<CustomTheme>) => void;
   reloadThemeFromServer: () => Promise<void>;
+  saveTheme: () => void;
+  hasUnsavedChanges: boolean;
 };
 
 type UserThemePayload = {
@@ -124,6 +126,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   const [customTheme, setCustomTheme] = useState<CustomTheme>(
     defaultCustomTheme
   );
+  // Track the last saved state to detect changes
+  const [savedCustomTheme, setSavedCustomTheme] = useState<CustomTheme>(
+    defaultCustomTheme
+  );
 
   // --- Backend persistence helpers ---
 
@@ -154,6 +160,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setThemeNameState(mode);
       setCustomTheme(mergedCustom);
+      setSavedCustomTheme(mergedCustom);
     } catch (err: any) {
       // 401 = not logged in -> ignore quietly
       if (err?.response?.status !== 401) {
@@ -223,18 +230,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // --- Public API for SettingsModal etc. ---
 
+  const saveTheme = () => {
+    saveThemeToServer(themeName, customTheme);
+    setSavedCustomTheme(customTheme);
+  };
+
   const setThemeName = (t: ThemeName) => {
     setThemeNameState(t);
+    // Auto-save mode switching
     saveThemeToServer(t, customTheme);
   };
 
   const updateCustomTheme = (patch: Partial<CustomTheme>) => {
     setCustomTheme((prev) => {
       const merged = { ...prev, ...patch };
-      saveThemeToServer(themeName, merged);
+      // No auto-save for custom theme tweaks; user must click Save
       return merged;
     });
   };
+
+  const hasUnsavedChanges = useMemo(() => {
+    return JSON.stringify(customTheme) !== JSON.stringify(savedCustomTheme);
+  }, [customTheme, savedCustomTheme]);
 
   const value = useMemo(
     () => ({
@@ -243,8 +260,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       customTheme,
       updateCustomTheme,
       reloadThemeFromServer,
+      saveTheme,
+      hasUnsavedChanges,
     }),
-    [themeName, customTheme]
+    [themeName, customTheme, savedCustomTheme, hasUnsavedChanges]
   );
 
   return (

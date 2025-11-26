@@ -162,9 +162,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.85rem;
+  gap: 6px;
+  padding-inline: 14px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .doc-sidebar-heading-row {
@@ -282,6 +284,8 @@
 
 .doc-paper-subtitle {
   margin: 0 0 10px;
+  font-size: 0.92rem;
+  text-align: center;
 }
 
 /* Relevant links */
@@ -290,8 +294,15 @@
   list-style: none;
   margin: 0 0 16px;
   padding: 0;
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  /* row / column spacing */
+}
+
+.doc-links li {
+  margin: 0;
 }
 
 .doc-links a {
@@ -375,10 +386,7 @@
   gap: 32px;
   margin: 0 auto 28px;
   padding: 14px 0 18px;
-  border-bottom: 1px solid var(--hairline, #e5ecf6);
-}
-
-.doc-contents:last-of-type {
+  /* no divider between sections for now */
   border-bottom: none;
 }
 
@@ -480,7 +488,6 @@
 .doc-paper textarea:focus-visible {
   outline: none;
   border-color: var(--brand, #3a7bfa);
-  background: #ffffff;
   box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
 }
 
@@ -594,7 +601,8 @@
 
 .document-footer {
   position: fixed;
-  left: 280px;           /* matches sidebar width */
+  left: 280px;
+  /* matches sidebar width */
   right: 0;
   bottom: 0;
 
@@ -688,9 +696,11 @@
   .document-grid {
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr) minmax(0, 1.4fr);
   }
+
   .document-right-column {
     display: none;
   }
+
   .document-main {
     grid-column: 2 / 4;
   }

@@ -17,6 +17,11 @@ export default defineConfig({
         // harmless in dev; if Django ever sets Domain on cookies, rewrite to localhost
         cookieDomainRewrite: "localhost",
       },
+      "/media": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

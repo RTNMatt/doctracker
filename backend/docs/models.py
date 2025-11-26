@@ -217,6 +217,14 @@ class Document(models.Model):
     departments = models.ManyToManyField(Department, blank=True, related_name="documents")
     tags = models.ManyToManyField(Tag, blank=True, related_name="documents")
 
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="documents_created"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -581,7 +589,8 @@ class UserProfile(models.Model):
         related_name="profiles"
     )
 
-    preferred_name = models.CharField(max_length=100, blank=True)
+    preferred_first_name = models.CharField(max_length=100, blank=True)
+    preferred_last_name = models.CharField(max_length=100, blank=True)
     job_title = models.CharField(max_length=150, blank=True)
     location = models.CharField(max_length=150, blank=True)
 

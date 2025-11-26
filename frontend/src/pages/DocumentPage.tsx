@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import type { FormEvent } from "react";
 import { api } from "../lib/api";
@@ -111,6 +111,7 @@ function openTag(t: NormalizedTag) {
 
 export default function DocumentPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { enter } = usePathTree();
   const { isAdmin, isEditor } = useAuth();
   const canEdit = isAdmin || isEditor;
@@ -168,6 +169,14 @@ export default function DocumentPage() {
     null
   );
 
+  // ----- COLLAPSIBLE FORMS -----
+  const [isAddingSection, setIsAddingSection] = useState(false);
+  const [isAddingLink, setIsAddingLink] = useState(false);
+
+  // ----- DELETION TRACKING -----
+  const [deletedSectionIds, setDeletedSectionIds] = useState<number[]>([]);
+  const [deletedLinkIds, setDeletedLinkIds] = useState<number[]>([]);
+
   // ----- LOAD DOCUMENT -----
   const loadDoc = async () => {
     if (!id) return;
@@ -180,6 +189,10 @@ export default function DocumentPage() {
       if (!initialDocSnapshot) {
         setInitialDocSnapshot(data);
       }
+
+      // Reset deletion tracking on load
+      setDeletedSectionIds([]);
+      setDeletedLinkIds([]);
 
       setErr(null);
       setDocError(null);
@@ -204,30 +217,93 @@ export default function DocumentPage() {
   const grouped = useMemo(() => groupTags(doc?.tags), [doc?.tags]);
 
   // ----- DOC UNSAVED-CHANGES DETECTION -----
-  const extractDocMeta = (d: any | null) => {
-    if (!d) return null;
-    return {
-      title: d.title ?? "",
-      status: d.status ?? "",
-      everyone: !!d.everyone,
-    };
-  };
-
+  // We need a deep comparison now because sections/links change locally
   const hasDocUnsavedChanges = useMemo(() => {
     if (!doc || !initialDocSnapshot) return false;
-    const current = extractDocMeta(doc);
-    const initial = extractDocMeta(initialDocSnapshot);
     try {
+      // Simple deep compare of relevant fields
+      // We need to strip out things that might change irrelevantly or order
+      // But for now, let's just compare the JSON stringification of the whole object
+      // This is expensive but safe for small docs.
+      // Better: compare specific fields.
+
+      const current = {
+        title: doc.title,
+        status: doc.status,
+        everyone: doc.everyone,
+        sections: doc.sections, // Order and content matters
+        links: doc.links,
+      };
+
+      const initial = {
+        title: initialDocSnapshot.title,
+        status: initialDocSnapshot.status,
+        everyone: initialDocSnapshot.everyone,
+        sections: initialDocSnapshot.sections,
+        links: initialDocSnapshot.links,
+      };
+
       return JSON.stringify(current) !== JSON.stringify(initial);
     } catch {
       return true;
     }
   }, [doc, initialDocSnapshot]);
 
+  const hasInlineDrafts = useMemo(() => {
+    if (!editMode) return false;
+
+    const hasEditingSectionDraft =
+      editingSectionId !== null &&
+      (editSectionHeader.trim() !== "" ||
+        editSectionBody.trim() !== "" ||
+        editSectionImage !== null);
+
+    const hasEditingLinkDraft =
+      editingLinkId !== null &&
+      (editLinkTitle.trim() !== "" ||
+        editLinkUrl.trim() !== "" ||
+        editLinkNote.trim() !== "");
+
+    const hasNewSectionDraft =
+      newSectionHeader.trim() !== "" ||
+      newSectionBody.trim() !== "" ||
+      newSectionImage !== null;
+
+    const hasNewLinkDraft =
+      newLinkTitle.trim() !== "" ||
+      newLinkUrl.trim() !== "" ||
+      newLinkNote.trim() !== "";
+
+    return (
+      hasEditingSectionDraft ||
+      hasEditingLinkDraft ||
+      hasNewSectionDraft ||
+      hasNewLinkDraft
+    );
+  }, [
+    editMode,
+    editingSectionId,
+    editSectionHeader,
+    editSectionBody,
+    editSectionImage,
+    editingLinkId,
+    editLinkTitle,
+    editLinkUrl,
+    editLinkNote,
+    newSectionHeader,
+    newSectionBody,
+    newSectionImage,
+    newLinkTitle,
+    newLinkUrl,
+    newLinkNote,
+  ]);
+
+
   // Warn on full page unload if unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!editMode || !hasDocUnsavedChanges) return;
+      if (!editMode) return;
+      if (!hasDocUnsavedChanges && !hasInlineDrafts) return;
       e.preventDefault();
       e.returnValue = "";
     };
@@ -236,7 +312,46 @@ export default function DocumentPage() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [editMode, hasDocUnsavedChanges]);
+  }, [editMode, hasDocUnsavedChanges, hasInlineDrafts]);
+
+  useEffect(() => {
+    if (!editMode) return;
+
+    const handleClick = (event: MouseEvent) => {
+      if (!editMode) return;
+      if (!hasDocUnsavedChanges && !hasInlineDrafts) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const anchor = target.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+
+      // Allow external links / new tabs / hash links
+      if (anchor.target === "_blank") return;
+      if (/^https?:\/\//i.test(href)) return;
+      if (href.startsWith("#")) return;
+
+      // This looks like an in-app navigation; intercept it
+      event.preventDefault();
+
+      const ok = window.confirm(
+        "You have unsaved changes to this document. Leave this page and discard them?"
+      );
+
+      if (ok) {
+        navigate(href);
+      }
+    };
+
+    document.addEventListener("click", handleClick, true);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+    };
+  }, [editMode, hasDocUnsavedChanges, hasInlineDrafts, navigate]);
 
   // Close locked info popovers when clicking outside
   useEffect(() => {
@@ -275,20 +390,115 @@ export default function DocumentPage() {
         return;
       }
 
+      // 1. Handle Deletions
+      if (deletedSectionIds.length > 0) {
+        await Promise.all(
+          deletedSectionIds.map(id => api.delete(`/sections/${id}/`))
+        );
+      }
+      if (deletedLinkIds.length > 0) {
+        await Promise.all(
+          deletedLinkIds.map(id => api.delete(`/links/${id}/`))
+        );
+      }
+
+      // 2. Update Document Metadata
       const payload: any = {
         title: doc.title,
         status: doc.status,
         everyone: doc.everyone,
       };
+      await api.patch(`/documents/${doc.id}/`, payload);
 
-      const res = await api.patch(`/documents/${doc.id}/`, payload);
+      // 3. Handle Sections (Create & Update & Reorder)
+      // We need to send updates for ALL sections to ensure order is correct.
+      // New sections have negative IDs.
+      if (doc.sections) {
+        for (let i = 0; i < doc.sections.length; i++) {
+          const s = doc.sections[i];
+          const form = new FormData();
+          form.append("order", String(i)); // Ensure order is set
+
+          // If it's a new section (id < 0) or modified, we send data.
+          // For simplicity in this "save all" model, we can just send everything for modified/new.
+          // But for existing unmodified ones, we only need to update 'order' if it changed.
+          // To be safe and simple:
+          // - If ID < 0: POST
+          // - If ID > 0: PATCH (always, to catch edits + order)
+
+          if (s.id < 0) {
+            // CREATE
+            form.append("document", String(doc.id));
+            form.append("header", s.header);
+            form.append("body_md", s.body_md);
+            if (s.imageFile) { // We stored the file object in state
+              form.append("image", s.imageFile);
+            }
+            await api.post("/sections/", form);
+          } else {
+            // UPDATE
+            form.append("header", s.header);
+            form.append("body_md", s.body_md);
+            if (s.imageFile) {
+              form.append("image", s.imageFile);
+            }
+            await api.patch(`/sections/${s.id}/`, form);
+          }
+        }
+      }
+
+      // 4. Handle Links
+      if (doc.links) {
+        for (const l of doc.links) {
+          if (l.id < 0) {
+            // CREATE
+            await api.post("/links/", {
+              document: doc.id,
+              title: l.title,
+              url: l.url,
+              note: l.note,
+            });
+          } else {
+            // UPDATE
+            await api.patch(`/links/${l.id}/`, {
+              title: l.title,
+              url: l.url,
+              note: l.note,
+            });
+          }
+        }
+      }
+
+      // Reload to get fresh state (real IDs, etc)
+      const res = await api.get(`/documents/${doc.id}/`);
       setDoc(res.data);
       setInitialDocSnapshot(res.data);
+
+      // Reset deletion tracking
+      setDeletedSectionIds([]);
+      setDeletedLinkIds([]);
+
     } catch (e: any) {
       setDocError(e?.message ?? "Failed to save document");
     } finally {
       setDocSaving(false);
     }
+  };
+
+  // ----- SECTION REORDERING -----
+  const handleMoveSection = async (index: number, direction: "up" | "down") => {
+    if (!doc?.sections) return;
+    const sections = [...doc.sections];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= sections.length) return;
+
+    // Swap in local state ONLY
+    const temp = sections[index];
+    sections[index] = sections[targetIndex];
+    sections[targetIndex] = temp;
+
+    setDoc((prev: any) => ({ ...prev, sections }));
   };
 
   // ----- SECTION EDITING -----
@@ -312,27 +522,26 @@ export default function DocumentPage() {
     e.preventDefault();
     if (!editingSectionId) return;
 
-    try {
-      setSectionSaving(true);
-      setSectionError(null);
-      const form = new FormData();
-      form.append("header", editSectionHeader.trim() || "(Untitled section)");
-      form.append("body_md", editSectionBody);
-      if (editSectionImage) {
-        form.append("image", editSectionImage);
-      }
-
-      await api.patch(`/sections/${editingSectionId}/`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+    // Local update only
+    setDoc((prev: any) => {
+      const newSections = prev.sections.map((s: any) => {
+        if (s.id === editingSectionId) {
+          return {
+            ...s,
+            header: editSectionHeader.trim() || "(Untitled section)",
+            body_md: editSectionBody,
+            imageFile: editSectionImage || s.imageFile, // Keep existing if not replaced, or new
+            // Note: We can't easily preview the new image without creating a URL, 
+            // but for now let's just store the file. 
+            // If we wanted preview, we'd createObjectURL here.
+          };
+        }
+        return s;
       });
+      return { ...prev, sections: newSections };
+    });
 
-      cancelEditSection();
-      await loadDoc();
-    } catch (e: any) {
-      setSectionError(e?.message ?? "Failed to update section");
-    } finally {
-      setSectionSaving(false);
-    }
+    cancelEditSection();
   };
 
   const handleCreateSection = async (e: FormEvent) => {
@@ -341,31 +550,26 @@ export default function DocumentPage() {
     if (!newSectionHeader.trim() && !newSectionBody.trim() && !newSectionImage)
       return;
 
-    try {
-      setSectionSaving(true);
-      setSectionError(null);
+    // Local create only (negative ID)
+    const tempId = -1 * (Date.now()); // Simple temp ID
+    const newSection = {
+      id: tempId,
+      header: newSectionHeader.trim() || "(Untitled section)",
+      body_md: newSectionBody,
+      imageFile: newSectionImage,
+      image: null, // No URL yet
+      order: doc.sections.length,
+    };
 
-      const form = new FormData();
-      form.append("document", String(doc.id));
-      form.append("header", newSectionHeader.trim() || "(Untitled section)");
-      form.append("body_md", newSectionBody);
-      if (newSectionImage) {
-        form.append("image", newSectionImage);
-      }
+    setDoc((prev: any) => ({
+      ...prev,
+      sections: [...(prev.sections || []), newSection]
+    }));
 
-      await api.post("/sections/", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setNewSectionHeader("");
-      setNewSectionBody("");
-      setNewSectionImage(null);
-      await loadDoc();
-    } catch (e: any) {
-      setSectionError(e?.message ?? "Failed to save section");
-    } finally {
-      setSectionSaving(false);
-    }
+    setNewSectionHeader("");
+    setNewSectionBody("");
+    setNewSectionImage(null);
+    setIsAddingSection(false);
   };
 
   // ----- LINK EDITING -----
@@ -389,21 +593,23 @@ export default function DocumentPage() {
     e.preventDefault();
     if (!editingLinkId) return;
 
-    try {
-      setLinkSaving(true);
-      setLinkError(null);
-      await api.patch(`/links/${editingLinkId}/`, {
-        title: editLinkTitle.trim() || editLinkUrl.trim() || "(Untitled link)",
-        url: editLinkUrl,
-        note: editLinkNote,
+    // Local update only
+    setDoc((prev: any) => {
+      const newLinks = prev.links.map((l: any) => {
+        if (l.id === editingLinkId) {
+          return {
+            ...l,
+            title: editLinkTitle.trim() || editLinkUrl.trim() || "(Untitled link)",
+            url: editLinkUrl,
+            note: editLinkNote,
+          };
+        }
+        return l;
       });
-      cancelEditLink();
-      await loadDoc();
-    } catch (e: any) {
-      setLinkError(e?.message ?? "Failed to update link");
-    } finally {
-      setLinkSaving(false);
-    }
+      return { ...prev, links: newLinks };
+    });
+
+    cancelEditLink();
   };
 
   const handleCreateLink = async (e: FormEvent) => {
@@ -411,24 +617,24 @@ export default function DocumentPage() {
     if (!doc?.id) return;
     if (!newLinkTitle.trim() && !newLinkUrl.trim()) return;
 
-    try {
-      setLinkSaving(true);
-      setLinkError(null);
-      await api.post("/links/", {
-        document: doc.id,
-        title: newLinkTitle.trim() || newLinkUrl.trim() || "(Untitled link)",
-        url: newLinkUrl,
-        note: newLinkNote,
-      });
-      setNewLinkTitle("");
-      setNewLinkUrl("");
-      setNewLinkNote("");
-      await loadDoc();
-    } catch (e: any) {
-      setLinkError(e?.message ?? "Failed to save link");
-    } finally {
-      setLinkSaving(false);
-    }
+    // Local create only
+    const tempId = -1 * (Date.now());
+    const newLink = {
+      id: tempId,
+      title: newLinkTitle.trim() || newLinkUrl.trim() || "(Untitled link)",
+      url: newLinkUrl,
+      note: newLinkNote,
+    };
+
+    setDoc((prev: any) => ({
+      ...prev,
+      links: [...(prev.links || []), newLink]
+    }));
+
+    setNewLinkTitle("");
+    setNewLinkUrl("");
+    setNewLinkNote("");
+    setIsAddingLink(false);
   };
 
   if (loading) return <p>Loading...</p>;
@@ -446,7 +652,19 @@ export default function DocumentPage() {
         {/* HEADER: title + status centered across all 4 columns */}
         <header className="document-header document-grid-full">
           <div className="document-header-main">
-            <h1 className="document-title">{doc.title}</h1>
+            {editMode && canEdit ? (
+              <input
+                type="text"
+                className="document-title-input"
+                value={doc.title}
+                onChange={(e) =>
+                  setDoc((prev: any) => ({ ...prev, title: e.target.value }))
+                }
+                placeholder="Document Title"
+              />
+            ) : (
+              <h1 className="document-title">{doc.title}</h1>
+            )}
             {doc.status && (
               <span
                 className={`document-status document-status--${doc.status}`}
@@ -490,11 +708,10 @@ export default function DocumentPage() {
                         {grouped.deptsOrCols.map((t) => (
                           <button
                             key={t.id}
-                            className={`tag-chip ${
-                              t.target_kind === "department"
-                                ? "is-dept"
-                                : "is-col"
-                            }`}
+                            className={`tag-chip ${t.target_kind === "department"
+                              ? "is-dept"
+                              : "is-col"
+                              }`}
                             onClick={() => openTag(t)}
                             title={t.description || t.name}
                           >
@@ -549,12 +766,12 @@ export default function DocumentPage() {
                 <div className="doc-sidebar-manage-block">
                   <button
                     type="button"
-                    className="doc-sidebar-primary-button ks-btn-primary"
+                    className="ks-btn-primary"
                     onClick={() => {
                       setIsTagModalOpen(true);
                     }}
                   >
-                    Manage tags…
+                    Manage tags
                   </button>
                 </div>
 
@@ -673,18 +890,18 @@ export default function DocumentPage() {
                   </button>
                   {(activeInfo === "visibility" ||
                     lockedInfo === "visibility") && (
-                    <div className="doc-info-popover">
-                      <p>
-                        Visibility controls whether this document is visible to
-                        everyone in the organization or only to members of its
-                        departments.
-                      </p>
-                      <p>
-                        When visibility is restricted, the document must belong
-                        to at least one department via its department tags.
-                      </p>
-                    </div>
-                  )}
+                      <div className="doc-info-popover">
+                        <p>
+                          Visibility controls whether this document is visible to
+                          everyone in the organization or only to members of its
+                          departments.
+                        </p>
+                        <p>
+                          When visibility is restricted, the document must belong
+                          to at least one department via its department tags.
+                        </p>
+                      </div>
+                    )}
                 </div>
               </section>
 
@@ -696,12 +913,12 @@ export default function DocumentPage() {
 
                 <button
                   type="button"
-                  className="doc-sidebar-primary-button ks-btn-primary"
+                  className="ks-btn-primary"
                   onClick={() => {
                     setIsCollectionsModalOpen(true);
                   }}
                 >
-                  Manage collections…
+                  Manage collections
                 </button>
 
                 {/* COLLECTIONS HELP BUBBLE (bottom-right) */}
@@ -737,19 +954,19 @@ export default function DocumentPage() {
                   </button>
                   {(activeInfo === "collections" ||
                     lockedInfo === "collections") && (
-                    <div className="doc-info-popover">
-                      <p>
-                        Collections group documents into curated sets, such as
-                        “Onboarding” or “Runbooks”.
-                      </p>
-                      <p>
-                        Use the manager to add this document to existing
-                        collections or create new ones. Changes to collections
-                        are saved immediately and do not depend on “Save
-                        document”.
-                      </p>
-                    </div>
-                  )}
+                      <div className="doc-info-popover">
+                        <p>
+                          Collections group documents into curated sets, such as
+                          “Onboarding” or “Runbooks”.
+                        </p>
+                        <p>
+                          Use the manager to add this document to existing
+                          collections or create new ones. Changes to collections
+                          are saved immediately and do not depend on “Save
+                          document”.
+                        </p>
+                      </div>
+                    )}
                 </div>
               </section>
             </>
@@ -840,45 +1057,65 @@ export default function DocumentPage() {
 
               {editMode && canEdit && (
                 <div className="doc-links-add-block">
-                  <h4>Add Link</h4>
-                  {linkError && (
-                    <p className="doc-error-text">{linkError}</p>
-                  )}
-                  <form
-                    onSubmit={handleCreateLink}
-                    className="doc-link-add-form"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Title"
-                      value={newLinkTitle}
-                      onChange={(e) => setNewLinkTitle(e.target.value)}
-                    />
-                    <input
-                      type="url"
-                      placeholder="https://example.com"
-                      value={newLinkUrl}
-                      onChange={(e) => setNewLinkUrl(e.target.value)}
-                    />
-                    <textarea
-                      placeholder="Optional note"
-                      value={newLinkNote}
-                      onChange={(e) => setNewLinkNote(e.target.value)}
-                      rows={2}
-                    />
+                  {!isAddingLink ? (
                     <button
-                      type="submit"
-                      className="ks-btn-primary"
-                      disabled={linkSaving}
+                      className="ks-btn-primary doc-add-trigger-btn"
+                      onClick={() => setIsAddingLink(true)}
                     >
-                      {linkSaving ? "Saving..." : "Add link"}
+                      + Add Link
                     </button>
-                  </form>
+                  ) : (
+                    <div className="doc-add-form-wrapper">
+                      <h4>Add Link</h4>
+                      {linkError && (
+                        <p className="doc-error-text">{linkError}</p>
+                      )}
+                      <form
+                        onSubmit={handleCreateLink}
+                        className="doc-link-add-form"
+                      >
+                        <input
+                          type="text"
+                          placeholder="Title"
+                          value={newLinkTitle}
+                          onChange={(e) => setNewLinkTitle(e.target.value)}
+                        />
+                        <input
+                          type="url"
+                          placeholder="https://example.com"
+                          value={newLinkUrl}
+                          onChange={(e) => setNewLinkUrl(e.target.value)}
+                        />
+                        <textarea
+                          placeholder="Optional note"
+                          value={newLinkNote}
+                          onChange={(e) => setNewLinkNote(e.target.value)}
+                          rows={2}
+                        />
+                        <div className="doc-inline-buttons">
+                          <button
+                            type="submit"
+                            className="ks-btn-primary"
+                            disabled={linkSaving}
+                          >
+                            {linkSaving ? "Saving..." : "Add link"}
+                          </button>
+                          <button
+                            type="button"
+                            className="ks-btn-secondary"
+                            onClick={() => setIsAddingLink(false)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* SECTIONS: headers/body on left, images on right */}
-              {doc.sections?.map((s: any) => (
+              {doc.sections?.map((s: any, index: number) => (
                 <section className="doc-contents" key={s.id}>
                   <div className="doc-left">
                     {editMode && canEdit && editingSectionId === s.id ? (
@@ -934,18 +1171,42 @@ export default function DocumentPage() {
                       </form>
                     ) : (
                       <>
-                        <h3 className="doc-section-title">
-                          {s.header}
+                        <div className="doc-section-header-row">
                           {editMode && canEdit && (
-                            <button
-                              type="button"
-                              className="doc-inline-edit-btn"
-                              onClick={() => startEditSection(s)}
-                            >
-                              Edit
-                            </button>
+                            <div className="doc-section-reorder-controls">
+                              <button
+                                type="button"
+                                className="doc-reorder-btn"
+                                disabled={index === 0}
+                                onClick={() => handleMoveSection(index, "up")}
+                                title="Move up"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                type="button"
+                                className="doc-reorder-btn"
+                                disabled={index === (doc.sections?.length || 0) - 1}
+                                onClick={() => handleMoveSection(index, "down")}
+                                title="Move down"
+                              >
+                                ▼
+                              </button>
+                            </div>
                           )}
-                        </h3>
+                          <h3 className="doc-section-title">
+                            {s.header}
+                            {editMode && canEdit && (
+                              <button
+                                type="button"
+                                className="doc-inline-edit-btn"
+                                onClick={() => startEditSection(s)}
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </h3>
+                        </div>
                         <pre className="doc-section-pre">{s.body_md}</pre>
                       </>
                     )}
@@ -973,48 +1234,70 @@ export default function DocumentPage() {
               {editMode && canEdit && (
                 <section className="doc-contents doc-add-section-block">
                   <div className="doc-left">
-                    <h3>Add Section</h3>
-                    {sectionError && !editingSectionId && (
-                      <p className="doc-error-text">{sectionError}</p>
+                    {!isAddingSection ? (
+                      <div style={{ textAlign: "center", padding: "20px 0" }}>
+                        <button
+                          className="ks-btn-primary doc-add-trigger-btn"
+                          onClick={() => setIsAddingSection(true)}
+                        >
+                          + Add Section
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="doc-add-form-wrapper">
+                        <h3>Add Section</h3>
+                        {sectionError && !editingSectionId && (
+                          <p className="doc-error-text">{sectionError}</p>
+                        )}
+                        <form
+                          onSubmit={handleCreateSection}
+                          className="doc-section-add-form"
+                        >
+                          <input
+                            type="text"
+                            placeholder="Section header"
+                            value={newSectionHeader}
+                            onChange={(e) =>
+                              setNewSectionHeader(e.target.value)
+                            }
+                          />
+                          <textarea
+                            placeholder="Section body (markdown/plain)"
+                            value={newSectionBody}
+                            onChange={(e) =>
+                              setNewSectionBody(e.target.value)
+                            }
+                            rows={6}
+                          />
+                          <label className="doc-image-label">
+                            Image (optional)
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) =>
+                                setNewSectionImage(e.target.files?.[0] ?? null)
+                              }
+                            />
+                          </label>
+                          <div className="doc-inline-buttons">
+                            <button
+                              type="submit"
+                              className="ks-btn-primary"
+                              disabled={sectionSaving}
+                            >
+                              {sectionSaving ? "Saving..." : "Add section"}
+                            </button>
+                            <button
+                              type="button"
+                              className="ks-btn-secondary"
+                              onClick={() => setIsAddingSection(false)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
                     )}
-                    <form
-                      onSubmit={handleCreateSection}
-                      className="doc-section-add-form"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Section header"
-                        value={newSectionHeader}
-                        onChange={(e) =>
-                          setNewSectionHeader(e.target.value)
-                        }
-                      />
-                      <textarea
-                        placeholder="Section body (markdown/plain)"
-                        value={newSectionBody}
-                        onChange={(e) =>
-                          setNewSectionBody(e.target.value)
-                        }
-                        rows={6}
-                      />
-                      <label className="doc-image-label">
-                        Image (optional)
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) =>
-                            setNewSectionImage(e.target.files?.[0] ?? null)
-                          }
-                        />
-                      </label>
-                      <button
-                        type="submit"
-                        className="ks-btn-primary"
-                        disabled={sectionSaving}
-                      >
-                        {sectionSaving ? "Saving..." : "Add section"}
-                      </button>
-                    </form>
                   </div>
                   <div className="doc-right" />
                 </section>
@@ -1029,7 +1312,7 @@ export default function DocumentPage() {
         {/* FOOTER BAR ACROSS ALL 4 COLUMNS */}
         <footer className="document-footer document-grid-full">
           <div className="document-footer-meta">
-            {editMode && canEdit && hasDocUnsavedChanges && (
+            {editMode && canEdit && (hasDocUnsavedChanges || hasInlineDrafts) && (
               <span className="doc-unsaved-pill">Unsaved changes</span>
             )}
           </div>
@@ -1050,7 +1333,7 @@ export default function DocumentPage() {
                   type="button"
                   className="document-edit-toggle ks-btn-secondary"
                   onClick={async () => {
-                    if (editMode && hasDocUnsavedChanges) {
+                    if (editMode && (hasDocUnsavedChanges || hasInlineDrafts)) {
                       const ok = window.confirm(
                         "You have unsaved changes to this document. Discard them?"
                       );
@@ -1070,6 +1353,8 @@ export default function DocumentPage() {
                     setNewSectionImage(null);
                     setActiveInfo(null);
                     setLockedInfo(null);
+                    setIsAddingSection(false);
+                    setIsAddingLink(false);
                   }}
                 >
                   {editMode ? "Done editing" : "Edit document"}

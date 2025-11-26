@@ -122,7 +122,7 @@ export const login = (u: string, p: string) =>
 
 export const logout = () => api.post("/auth/logout/");
 
-export const me     = () => api.get("/auth/me/");
+export const me = () => api.get("/auth/me/");
 
 export const getTiles = () => api.get("/tiles/");
 
@@ -200,4 +200,20 @@ export async function updateProfile(data: FormData) {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;
+}
+
+export async function listUserDocuments(userId: number) {
+  const res = await api.get(`/documents/?created_by=${userId}`);
+  const data = res.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
+}
+
+export async function listUserCollections(userId: number) {
+  const res = await api.get(`/collections/?created_by=${userId}`);
+  const data = res.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
 }

@@ -69,7 +69,7 @@ function ColorControl({
 }
 
 function AppearanceSection() {
-  const { themeName, setThemeName, customTheme, updateCustomTheme } = useTheme();
+  const { themeName, setThemeName, customTheme, updateCustomTheme, saveTheme, hasUnsavedChanges } = useTheme();
 
   const handleThemeSelect = (name: ThemeName) => {
     setThemeName(name);
@@ -261,6 +261,14 @@ function AppearanceSection() {
             </>
           )}
         </p>
+
+        {isCustom && hasUnsavedChanges && (
+          <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
+            <button className="ks-btn-primary" onClick={saveTheme}>
+              Save Changes
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

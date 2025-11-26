@@ -1,7 +1,27 @@
 /* --- Reset / base --- */
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-html, body, #root { font-family: "Inter", system-ui, sans-serif; height: 100%;}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+html,
+body,
+#root {
+  font-family: "Inter", system-ui, sans-serif;
+  height: 100%;
+}
 
 html {
   scrollbar-gutter: stable;
@@ -57,7 +77,8 @@ html {
   /* Sidebar */
   --sidebar-bg: #050816;
   --sidebar-text: #e5e7eb;
-  --sidebar-control-bg: #0d1220;     /* darker = more consistent */
+  --sidebar-control-bg: #0d1220;
+  /* darker = more consistent */
   --sidebar-control-text: #f9fafb;
 
   /* Chrome (toolbar / bottom doc bar) */
@@ -65,11 +86,13 @@ html {
   --chrome-text: #e5e7eb;
 
   /* Main content */
-  --content-bg: #050816;             /* TRUE dark background */
+  --content-bg: #050816;
+  /* TRUE dark background */
   --content-text: #e5e7eb;
 
   /* Cards / tiles / tags */
-  --card-bg: #0b1020;                /* Slight lift over content-bg */
+  --card-bg: #0b1020;
+  /* Slight lift over content-bg */
   --card-text: #e5e7eb;
 
   /* Document */
@@ -77,7 +100,8 @@ html {
   --doc-text: #e5e7eb;
 
   /* Borders */
-  --border-soft: #333a45;            /* enough contrast to see tile borders */
+  --border-soft: #333a45;
+  /* enough contrast to see tile borders */
 
   /* Accent */
   --brand: #3a7bfa;
@@ -116,14 +140,14 @@ html {
   text-align: center;
 }
 
-.layout-main > h1,
-.layout-main > .page-title {
+.layout-main>h1,
+.layout-main>.page-title {
   text-align: center;
   margin: 0 0 12px;
   color: var(--content-text);
 }
 
-.layout-main > .tiles {
+.layout-main>.tiles {
   max-width: 1200px;
   margin: 16px auto 64px;
   padding: 0 16px;
@@ -134,5 +158,3 @@ html {
   padding-bottom: 10%;
   color: var(--content-text);
 }
-
-

@@ -107,11 +107,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             "user",
-            "preferred_name",
+            "preferred_first_name",
+            "preferred_last_name",
             "job_title",
             "location",
             "bio",
             "avatar_url",
+            "avatar",
             "departments",
         ]
         read_only_fields = ["user", "departments"]
@@ -264,6 +266,7 @@ class DocumentSerializer(OrgScopedSerializerMixin, serializers.ModelSerializer):
             "template",
             "departments",
             "tags",
+            "created_by",
             "collections",   # 👈 add this line
             "created_at",
             "updated_at",

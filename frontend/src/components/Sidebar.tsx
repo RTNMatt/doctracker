@@ -126,10 +126,12 @@ export default function Sidebar() {
           </button>
 
           <div className="user-chip" title={isSignedIn ? userName : "Not signed in"}>
-            <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
-            <div className="user-meta">
+            <Link to="/profile" className="avatar-link">
+              <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
+            </Link>
+            <div className="user-meta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
               <Link to="/profile" className="user-name" style={{ textDecoration: 'none', color: 'inherit' }}>{userName}</Link>
-              <button className="link-button" onClick={handleSignInOut}>
+              <button className="link-button" onClick={handleSignInOut} style={{ fontSize: '0.8rem', opacity: 0.8 }}>
                 {isSignedIn ? "Sign out" : "Sign in"}
               </button>
             </div>

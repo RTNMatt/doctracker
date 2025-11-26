@@ -5,7 +5,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import (
     Department, Template, Document, Section, ResourceLink, Tag,
@@ -129,11 +129,17 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         org = getattr(self.request, "org", None)
-        return (
+        qs = (
             Document.objects
             .filter(org=org)
-            .prefetch_related("tags", "sections", "links", "departments", "collections")  # 👈 added collections
+            .prefetch_related("tags", "sections", "links", "departments", "collections")
         )
+
+        created_by = self.request.query_params.get("created_by")
+        if created_by:
+            qs = qs.filter(created_by_id=created_by)
+
+        return qs
 
     def _create_version_snapshot(self, doc: Document):
         """
@@ -157,7 +163,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        doc = serializer.save(org=self.request.org)
+        doc = serializer.save(
+            org=self.request.org,
+            created_by=self.request.user if self.request.user.is_authenticated else None
+        )
         sync_structural_tags(doc)
         self._create_version_snapshot(doc)
 
@@ -254,6 +263,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 class SectionViewSet(viewsets.ModelViewSet):
     serializer_class = SectionSerializer
     permission_classes = [IsAuthenticated, IsOrgMember, IsAdminOrEditor]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         # Sections inherit org via their parent document
@@ -302,13 +312,22 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         org = getattr(self.request, "org", None)
-        return Collection.objects.filter(org=org).prefetch_related(
+        qs = Collection.objects.filter(org=org).prefetch_related(
             "documents",
             "subcollections",
         )
 
+        created_by = self.request.query_params.get("created_by")
+        if created_by:
+            qs = qs.filter(created_by_id=created_by)
+
+        return qs
+
     def perform_create(self, serializer):
-        serializer.save(org=self.request.org)
+        serializer.save(
+            org=self.request.org,
+            created_by=self.request.user if self.request.user.is_authenticated else None
+        )
 
     def perform_update(self, serializer):
         serializer.save(org=self.request.org)
