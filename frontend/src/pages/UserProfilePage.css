@@ -7,7 +7,7 @@
     /* Adjust for navbar */
     gap: 32px;
     padding: 0 16px 32px;
-    max-width: 1200px;
+    max-width: 2000px;
     margin: 0 auto;
 }
 
@@ -15,8 +15,8 @@
 .profile-top-row {
     display: grid;
     grid-template-columns: 320px minmax(0, 1fr);
-    gap: 32px;
-    align-items: start;
+    gap: 10vw;
+    align-items: stretch;
 }
 
 @media (max-width: 900px) {
@@ -32,6 +32,9 @@
     border-radius: 16px;
     padding: 32px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    height: 100%;              /* NEW: stretch to grid row height */
+    display: flex;             /* NEW: so inner content can flex */
+    flex-direction: column;    /* NEW */
 }
 
 .profile-view {
@@ -40,11 +43,13 @@
     align-items: center;
     gap: 24px;
     text-align: center;
+    flex: 1 1 auto;  /* NEW: fill vertical space */
+    justify-content: space-between;
 }
 
 .profile-avatar-large {
-    width: 120px;
-    height: 120px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
     background: var(--brand);
     color: #fff;
@@ -77,6 +82,9 @@
     line-height: 1.6;
     color: var(--card-text);
     font-size: 0.95rem;
+    background: color-mix(in oklab, var(--card-bg) 80%, white);
+    border-radius: 9px;
+    padding: 4px 12px;
 }
 
 .profile-departments {
@@ -210,6 +218,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    flex: 1 1 auto;  /* NEW */
 }
 
 .form-row {
@@ -254,4 +263,171 @@
     margin-top: 8px;
     padding-top: 16px;
     border-top: 1px solid var(--border-soft);
+}
+
+
+/* =========================
+   Responsive scaling rules
+   ========================= */
+
+   /* Compact department-style carousels when used on the profile page */
+.profile-lists-compact .department-section {
+  margin-bottom: 8px;
+}
+
+.profile-lists-compact .department-section-header {
+  margin-bottom: 4px;
+}
+
+.profile-lists-compact .department-section-title {
+  font-size: 0.78rem;
+}
+
+/* If you have the small search inputs like on DepartmentPage */
+.profile-lists-compact .department-section-search-input {
+  width: 160px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+/* On profile page, use a single row for dept-style grids */
+.profile-lists-compact .dept-card-grid {
+  /* keep horizontal scroll behavior */
+  grid-auto-flow: column;
+  grid-auto-columns: 240px; /* you can tweak this if you want narrower/wider cards */
+  grid-template-rows: none; /* override the global repeat(2, ...) */
+  gap: 12px;
+}
+
+/* Carousel container tighter */
+.profile-lists-compact .dept-carousel {
+  padding: 2px 0 4px;
+}
+
+/* Smaller tiles: about ~2/3 width & height of department tiles */
+.profile-lists-compact .dept-card-grid {
+  grid-auto-columns: 260px; /* narrower tiles */
+  gap: 6px;
+}
+
+.profile-lists-compact .dept-card {
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+/* Text scaled down */
+.profile-lists-compact .dept-card-title {
+  font-size: 0.8rem;
+}
+
+.profile-lists-compact .dept-card-body {
+  font-size: 0.7rem;
+  -webkit-line-clamp: 2;
+}
+
+/* Smaller arrows */
+.profile-lists-compact .dept-scroll-arrow {
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
+}
+
+
+
+/* Desktop scaling - smaller on 1080-ish heights */
+@media (max-height: 1200px) {
+    .profile-lists-compact .dept-card-grid {
+    grid-auto-columns: 160px; /* narrower tiles */
+    gap: 6px;
+    }
+  .user-profile-page {
+    gap: 24px;
+    padding: 0 12px 24px;
+    max-width: 1100px;
+  }
+
+  .profile-top-row {
+    gap: 24px;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .profile-card {
+    padding: 24px;
+    border-radius: 14px;
+  }
+
+  .profile-avatar-large {
+    width: 96px;
+    height: 96px;
+    font-size: 40px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .profile-meta,
+  .profile-bio {
+    font-size: 0.9rem;
+  }
+
+  .profile-lists-column {
+    gap: 24px;
+  }
+}
+
+/* Tighter again for smaller-height laptops */
+@media (max-height: 1000px) {
+    .profile-lists-compact .dept-card-grid {
+    grid-auto-columns: 160px; /* narrower tiles */
+    gap: 6px;
+    }
+  .user-profile-page {
+    max-width: 1000px;
+    padding: 0 10px 20px;
+  }
+
+  .profile-top-row {
+    gap: 20px;
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .profile-card {
+    padding: 20px;
+  }
+
+  .profile-avatar-large {
+    width: 88px;
+    height: 88px;
+    font-size: 36px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.35rem;
+  }
+}
+
+/* On tall screens (e.g. 4K), scale profile carousels back up */
+@media (min-height: 1600px) {
+
+  .profile-lists-compact .dept-card {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .profile-lists-compact .dept-card-title {
+    font-size: 0.9rem;
+  }
+
+  .profile-lists-compact .dept-card-body {
+    font-size: 0.8rem;
+  }
+
+  .profile-lists-compact .dept-scroll-arrow {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+  }
 }

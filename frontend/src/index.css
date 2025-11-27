@@ -140,14 +140,14 @@ html {
   text-align: center;
 }
 
-.layout-main>h1,
-.layout-main>.page-title {
+.layout-main > h1,
+.layout-main > .page-title {
   text-align: center;
   margin: 0 0 12px;
   color: var(--content-text);
 }
 
-.layout-main>.tiles {
+.layout-main > .tiles {
   max-width: 1200px;
   margin: 16px auto 64px;
   padding: 0 16px;
@@ -157,4 +157,35 @@ html {
   font-size: 60px;
   padding-bottom: 10%;
   color: var(--content-text);
+}
+
+/* =========================
+   Global responsive scaling
+   ========================= */
+
+/* Slightly smaller base on typical 1080 / laptop heights */
+@media (max-height: 1200px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-height: 1000px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Smaller again for short-height layouts (small laptops) */
+@media (max-height: 800px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* Give ultra-tall / 4K displays a touch more scale */
+@media (min-height: 1600px) {
+  html {
+    font-size: 17px;
+  }
 }

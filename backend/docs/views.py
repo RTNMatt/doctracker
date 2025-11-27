@@ -60,6 +60,35 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(qs)
         ser = DocumentSerializer(page or qs, many=True, context={"request": request})
         return self.get_paginated_response(ser.data) if page is not None else Response(ser.data)
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="collections",
+        url_name="collections",
+        permission_classes=[IsAuthenticated, IsOrgMember],
+    )
+    def collections(self, request, *args, **kwargs):
+        """
+        Collections that include documents from this department.
+        """
+        dept = self.get_object()  # already org-scoped
+
+        qs = (
+            Collection.objects
+            .filter(org=request.org, documents__departments=dept)
+            .prefetch_related("documents", "subcollections")
+            .distinct()
+        )
+
+        page = self.paginate_queryset(qs)
+        serializer = CollectionSerializer(
+            page or qs,
+            many=True,
+            context={"request": request},
+        )
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
 
 # -----------------------------
@@ -247,6 +276,68 @@ class DocumentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(doc, context={"request": request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"])
+    def reorder_sections(self, request, pk=None):
+        """
+        Reorder sections for this document.
+
+        Request body:
+          {
+            "section_ids": [3, 1, 2, ...]   # ordered list of section IDs
+          }
+
+        Notes:
+        - Only sections that belong to this document are updated.
+        - Unknown / negative IDs are ignored (e.g. unsaved client-side sections).
+        - Any sections not mentioned are appended after, preserving their relative order.
+        - Creates a DocumentVersion snapshot for edit history.
+        """
+        doc = self.get_object()
+
+        section_ids = request.data.get("section_ids", [])
+        if not isinstance(section_ids, (list, tuple)):
+            return Response(
+                {"detail": "section_ids must be a list of IDs"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Only consider existing sections on this document
+        existing_ids = list(
+            Section.objects.filter(document=doc, id__in=section_ids)
+            .order_by("order", "id")
+            .values_list("id", flat=True)
+        )
+
+        # If nothing to do, just return current state
+        if not existing_ids:
+            serializer = self.get_serializer(doc, context={"request": request})
+            return Response(serializer.data)
+
+        # Assign new order to the IDs in the order provided
+        order = 0
+        for sid in section_ids:
+            if sid in existing_ids:
+                Section.objects.filter(document=doc, id=sid).update(order=order)
+                order += 1
+
+        # Any sections not mentioned (e.g. newly created, or omitted) are appended
+        remaining = (
+            Section.objects.filter(document=doc)
+            .exclude(id__in=existing_ids)
+            .order_by("order", "id")
+            .values_list("id", flat=True)
+        )
+        for sid in remaining:
+            Section.objects.filter(document=doc, id=sid).update(order=order)
+            order += 1
+
+        # Refresh + create edit-history snapshot
+        doc.refresh_from_db()
+        self._create_version_snapshot(doc)
+
+        serializer = self.get_serializer(doc, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get"])
     def requirements(self, request, pk=None):
         """
@@ -432,8 +523,60 @@ class DepartmentMembersView(APIView):
         if not dept:
             return Response({"detail": "Department not found"}, status=404)
 
-        profiles = dept.members.select_related("user").order_by("preferred_name", "user__username")
+        profiles = (
+            dept.members
+            .select_related("user")
+            .order_by("preferred_first_name", "preferred_last_name", "user__username")
+        )
         return Response(UserProfileSerializer(profiles, many=True).data)
+
+    def post(self, request, slug):
+        """
+        Admin-only: add or remove a user from this department.
+
+        body: { "action": "add"|"remove", "user_id": <int> } or
+              { "action": "add", "username": "<str>" }
+        """
+        dept = Department.objects.filter(
+            org=request.org, slug=slug
+        ).first()
+        if not dept:
+            return Response({"detail": "Department not found"}, status=404)
+
+        # Only org admins/editors can change department membership
+        has_role = Membership.objects.filter(
+            org=request.org,
+            user=request.user,
+            role__in=["admin", "editor"],
+        ).exists()
+        if not has_role:
+            return Response({"detail": "Forbidden"}, status=403)
+
+        action = request.data.get("action")
+        user_id = request.data.get("user_id")
+        username = request.data.get("username")
+
+        if action not in ("add", "remove"):
+            return Response({"detail": "Invalid action"}, status=400)
+
+        profile_qs = UserProfile.objects.filter(org=request.org)
+        if user_id:
+            profile_qs = profile_qs.filter(user__id=user_id)
+        elif username:
+            profile_qs = profile_qs.filter(user__username=username)
+        else:
+            return Response({"detail": "user_id or username is required"}, status=400)
+
+        profile = profile_qs.first()
+        if not profile:
+            return Response({"detail": "Profile not found"}, status=404)
+
+        if action == "add":
+            profile.departments.add(dept)
+        else:
+            profile.departments.remove(dept)
+
+        return Response(UserProfileSerializer(profile, context={"request": request}).data)
 
 
 # -----------------------------

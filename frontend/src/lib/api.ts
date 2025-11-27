@@ -142,6 +142,10 @@ export const listCollections = () => api.get("/collections/");
 export const setDocumentCollections = (docId: number, collectionIds: number[]) =>
   api.post(`/documents/${docId}/set_collections/`, { collection_ids: collectionIds });
 
+// ---------- Sections ----------
+export const reorderDocumentSections = (docId: number, sectionIds: number[]) =>
+  api.post(`/documents/${docId}/reorder_sections/`, { section_ids: sectionIds });
+
 // ---------- Documents ----------
 export async function listDocuments() {
   const res = await api.get("/documents/");

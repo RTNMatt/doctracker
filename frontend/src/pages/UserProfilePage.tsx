@@ -1,11 +1,10 @@
 // src/pages/UserProfilePage.tsx
-import { useEffect, useState, useRef, type FormEvent } from "react";
+import { useEffect, useState, useRef, useCallback, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getProfile, updateProfile, listUserDocuments, listUserCollections } from "../lib/api";
 import type { Tile } from "../lib/types";
-import TileCard from "../components/TileCard";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import "./DepartmentPage.css";
 import "./UserProfilePage.css";
 
 type ProfileData = {
@@ -20,41 +19,124 @@ type ProfileData = {
 };
 
 // Helper for horizontal scroll sections
-function HorizontalSection({ title, tiles, onTileClick }: { title: string, tiles: Tile[], onTileClick: (t: Tile) => void }) {
-    const scrollRef = useRef<HTMLDivElement>(null);
+function HorizontalSection({ title, tiles, onTileClick }: { title: string; tiles: Tile[]; onTileClick: (t: Tile) => void }) {
+    const scrollerRef = useRef<HTMLDivElement | null>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const scroll = (dir: "left" | "right") => {
-        if (scrollRef.current) {
-            const amount = 300;
-            scrollRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+    const updateArrows = useCallback(() => {
+        const el = scrollerRef.current;
+        if (!el) {
+            setCanScrollLeft(false);
+            setCanScrollRight(false);
+            return;
+        }
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        setCanScrollLeft(scrollLeft > 0);
+        setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+    }, []);
+
+    useEffect(() => {
+        const el = scrollerRef.current;
+        if (!el) return;
+
+        const handleScroll = () => updateArrows();
+
+        // initial
+        handleScroll();
+        el.addEventListener("scroll", handleScroll);
+        window.addEventListener("resize", handleScroll);
+        return () => {
+            el.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("resize", handleScroll);
+        };
+    }, [updateArrows, tiles.length]);
+
+    const scrollHorizontal = (direction: "left" | "right") => {
+        const el = scrollerRef.current;
+        if (!el) return;
+        const amount = el.clientWidth * 0.8;
+        el.scrollBy({
+            left: direction === "left" ? -amount : amount,
+            behavior: "smooth",
+        });
+    };
+
+    const makeHorizontalWheelHandler = (
+        ref: { current: HTMLDivElement | null }
+    ) => (e: React.WheelEvent<HTMLDivElement>) => {
+        const el = ref.current;
+        if (!el) return;
+
+        // If user mostly scrolls vertically, use that to scroll horizontally
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            el.scrollBy({
+                left: e.deltaY,
+                behavior: "auto",
+            });
+            e.preventDefault();
         }
     };
 
+    const handleWheel = makeHorizontalWheelHandler(scrollerRef);
+
     return (
-        <div className="content-section">
-            <h3>{title}</h3>
-            {tiles.length === 0 ? (
-                <div className="empty-list-placeholder">
-                    <p>No items yet.</p>
-                </div>
-            ) : (
-                <div className="horizontal-list-wrap">
-                    <button className="scroll-btn left" onClick={() => scroll("left")} aria-label="Scroll left">
-                        <ChevronLeft size={20} />
+        <section className="department-section">
+            <div className="department-section-header">
+                <h2 className="department-section-title">{title}</h2>
+            </div>
+            <div className="department-carousel-wrapper">
+                {canScrollLeft && (
+                    <button
+                        type="button"
+                        className="dept-scroll-arrow dept-scroll-arrow-left"
+                        onClick={() => scrollHorizontal("left")}
+                        aria-label={`Scroll ${title.toLowerCase()} left`}
+                    >
+                        ‹
                     </button>
-                    <div className="horizontal-list" ref={scrollRef}>
-                        {tiles.map(tile => (
-                            <div key={tile.id} className="tile-wrapper" style={{ flex: "0 0 280px" }}>
-                                <TileCard tile={tile} onClick={() => onTileClick(tile)} />
-                            </div>
-                        ))}
-                    </div>
-                    <button className="scroll-btn right" onClick={() => scroll("right")} aria-label="Scroll right">
-                        <ChevronRight size={20} />
-                    </button>
+                )}
+                <div
+                    className="dept-carousel"
+                    ref={scrollerRef}
+                    onWheel={handleWheel}
+                >
+                    {tiles.length ? (
+                        <div className="dept-card-grid">
+                            {tiles.map((tile) => (
+                                <button
+                                    key={tile.id}
+                                    type="button"
+                                    className="dept-card"
+                                    onClick={() => onTileClick(tile)}
+                                >
+                                    <div className="dept-card-title">{tile.title}</div>
+                                    {tile.description && (
+                                        <div className="dept-card-body">
+                                            {tile.description}
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="dept-empty-state">
+                            <p>No items yet.</p>
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
+                {canScrollRight && (
+                    <button
+                        type="button"
+                        className="dept-scroll-arrow dept-scroll-arrow-right"
+                        onClick={() => scrollHorizontal("right")}
+                        aria-label={`Scroll ${title.toLowerCase()} right`}
+                    >
+                        ›
+                    </button>
+                )}
+            </div>
+        </section>
     );
 }
 
@@ -111,13 +193,23 @@ export default function UserProfilePage() {
             ]);
 
             // Convert to Tile format for display
-            setDocuments(docs.map((d: any) => ({
-                id: d.id,
-                title: d.title,
-                kind: "document",
-                documentId: d.id,
-                description: "Document",
-            })));
+            setDocuments(
+                docs.map((d: any) => {
+                    const rawStatus: string | undefined = d.status;
+                    const prettyStatus =
+                        rawStatus && typeof rawStatus === "string"
+                            ? rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1)
+                            : "Document";
+
+                    return {
+                        id: d.id,
+                        title: d.title,
+                        kind: "document",
+                        documentId: d.id,
+                        description: prettyStatus, // Draft / Published / Archived
+                    } as Tile;
+                })
+            );
 
             setCollections(cols.map((c: any) => ({
                 id: c.id,
@@ -304,7 +396,7 @@ export default function UserProfilePage() {
                 </div>
 
                 {/* Right Column: Content */}
-                <div className="profile-lists-column">
+                <div className="profile-lists-column profile-lists-compact">
                     <HorizontalSection title="My Collections" tiles={collections} onTileClick={handleTileClick} />
                     <HorizontalSection title="My Documents" tiles={documents} onTileClick={handleTileClick} />
                 </div>

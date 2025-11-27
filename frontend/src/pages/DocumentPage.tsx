@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import type { FormEvent } from "react";
-import { api } from "../lib/api";
+import { api, reorderDocumentSections } from "../lib/api";
 import "./DocumentPage.css";
 import { usePathTree } from "../state/PathTree";
 import { useAuth } from "../context/AuthContext";
@@ -488,17 +488,47 @@ export default function DocumentPage() {
   // ----- SECTION REORDERING -----
   const handleMoveSection = async (index: number, direction: "up" | "down") => {
     if (!doc?.sections) return;
-    const sections = [...doc.sections];
+
     const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= doc.sections.length) return;
 
-    if (targetIndex < 0 || targetIndex >= sections.length) return;
+    const previousSections = doc.sections;
+    const sections = [...doc.sections];
 
-    // Swap in local state ONLY
     const temp = sections[index];
     sections[index] = sections[targetIndex];
     sections[targetIndex] = temp;
 
+    // Optimistic local update
     setDoc((prev: any) => ({ ...prev, sections }));
+
+    // No persisted document ID yet – nothing to sync
+    if (!doc.id) return;
+
+    // Only send real, persisted sections to the backend (ignore temp negative IDs)
+    const persistedIds = sections
+      .map((s) => s.id)
+      .filter((id: number) => typeof id === "number" && id > 0);
+
+    if (!persistedIds.length) return;
+
+    try {
+      // Persist order + create a version snapshot
+      const res = await reorderDocumentSections(doc.id, persistedIds);
+
+      // Use server response as new clean baseline (ordering is now saved)
+      const fresh = res.data ?? res;
+      setDoc(fresh);
+      setInitialDocSnapshot(fresh);
+      setDocError(null);
+    } catch (e: any) {
+      // Roll back UI and show error
+      setDoc((prev: any) => ({ ...prev, sections: previousSections }));
+      setDocError(
+        e?.message ??
+          "Failed to save section order. The previous order has been restored."
+      );
+    }
   };
 
   // ----- SECTION EDITING -----

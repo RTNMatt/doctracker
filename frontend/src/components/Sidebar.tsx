@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
@@ -7,7 +7,7 @@ import PathTrail from "../components/PathTrail";
 import { usePathTree } from "../state/PathTree";
 import { useAuth } from "../context/AuthContext";
 import SettingsModal from "../components/SettingsModal";
-
+import { getProfile } from "../lib/api";
 
 type NavItem = {
   to: string;
@@ -18,14 +18,63 @@ type NavItem = {
 export default function Sidebar() {
   const [q, setQ] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [profileFirstName, setProfileFirstName] = useState<string | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { resetTo } = usePathTree();
 
-  // ⟵ added: real auth state from context
   const { isAuthenticated, user, signOut } = useAuth();
   const isSignedIn = isAuthenticated;
-  const userName = isSignedIn ? (user?.username ?? "User") : "Guest";
+
+  // Base auth user object (from /auth/me/)
+  const authUser = user as any;
+  const fallbackName: string = authUser?.username ?? "User";
+
+  // Load richer profile info (first name, avatar) when signed in
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfile() {
+      if (!isSignedIn) {
+        setProfileFirstName(null);
+        setProfileAvatarUrl(null);
+        return;
+      }
+      try {
+        const data = await getProfile(); // /profiles/me/
+        if (cancelled) return;
+
+        const nameFromProfile: string | null =
+          data?.preferred_first_name ||
+          data?.user?.username ||
+          null;
+
+        setProfileFirstName(nameFromProfile);
+        setProfileAvatarUrl(data?.avatar_url ?? null);
+      } catch {
+        if (cancelled) return;
+        setProfileFirstName(null);
+        setProfileAvatarUrl(null);
+      }
+    }
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn]);
+
+  const firstName: string = isSignedIn
+    ? (profileFirstName && profileFirstName.trim()) ||
+      fallbackName.split(" ")[0] ||
+      fallbackName
+    : "Guest";
+
+  const avatarUrl: string | null = isSignedIn ? profileAvatarUrl : null;
+  const avatarInitial = firstName.charAt(0).toUpperCase();
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,7 +82,6 @@ export default function Sidebar() {
     if (term) navigate(`/search?q=${encodeURIComponent(term)}`);
   }
 
-  // ⟵ updated: minimal sign-in/out handlers using auth + router
   async function handleSignInOut() {
     if (isSignedIn) {
       await signOut();
@@ -55,10 +103,10 @@ export default function Sidebar() {
     { to: "/create", label: "Create content" },
   ];
 
-  // Reset the path tree when clicking top-level destinations
+  // Reset the path trail when clicking top-level destinations
   function handleNavClick(to: string) {
     if (to === "/") {
-      resetTo(null); // clear the trail entirely on Home
+      resetTo(null);
     } else if (to === "/departments") {
       resetTo({ kind: "index", name: "Departments", url: "/departments" });
     } else if (to === "/collections") {
@@ -91,7 +139,9 @@ export default function Sidebar() {
           <nav className="sidebar-nav">
             <ul>
               {nav.map((item) => {
-                const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                const active = item.exact
+                  ? pathname === item.to
+                  : pathname.startsWith(item.to);
                 return (
                   <li key={item.to}>
                     <Link
@@ -125,13 +175,28 @@ export default function Sidebar() {
             <Settings className="icon-cog" />
           </button>
 
-          <div className="user-chip" title={isSignedIn ? userName : "Not signed in"}>
+          <div
+            className="user-chip"
+            title={isSignedIn ? firstName : "Not signed in"}
+          >
             <Link to="/profile" className="avatar-link">
-              <div className="avatar">{userName.slice(0, 1).toUpperCase()}</div>
+              <div className="avatar">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={firstName} />
+                ) : (
+                  avatarInitial
+                )}
+              </div>
             </Link>
-            <div className="user-meta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-              <Link to="/profile" className="user-name" style={{ textDecoration: 'none', color: 'inherit' }}>{userName}</Link>
-              <button className="link-button" onClick={handleSignInOut} style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+            <div className="user-meta">
+              <Link to="/profile" className="user-name">
+                {firstName}
+              </Link>
+              <button
+                className="link-button"
+                onClick={handleSignInOut}
+                style={{ fontSize: "0.8rem", opacity: 0.8 }}
+              >
                 {isSignedIn ? "Sign out" : "Sign in"}
               </button>
             </div>
