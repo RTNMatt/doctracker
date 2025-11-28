@@ -35,6 +35,24 @@ type LightboxImage = {
   alt: string;
 };
 
+const STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
+  { value: "published", label: "Published" },
+  { value: "archived", label: "Archived" },
+];
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  published: "Published",
+  archived: "Archived",
+};
+
+function formatStatusLabel(status?: string | null) {
+  if (!status) return "";
+  // Capitalize first letter, keep the rest as-is
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 function normalizeTag(t: RawTag): NormalizedTag {
   if (t.target_kind && t.target_value) return t as NormalizedTag;
 
@@ -136,6 +154,7 @@ export default function DocumentPage() {
   const [newSectionHeader, setNewSectionHeader] = useState("");
   const [newSectionBody, setNewSectionBody] = useState("");
   const [newSectionImage, setNewSectionImage] = useState<File | null>(null);
+  const [sectionSearch, setSectionSearch] = useState("");
 
   const [sectionSaving, setSectionSaving] = useState(false);
   const [sectionError, setSectionError] = useState<string | null>(null);
@@ -202,6 +221,37 @@ export default function DocumentPage() {
       setLoading(false);
     }
   };
+
+  const matchingSectionIds = useMemo<Set<number>>(() => {
+    if (!doc?.sections || !sectionSearch.trim()) return new Set<number>();
+
+    const q = sectionSearch.trim().toLowerCase();
+    const ids = doc.sections
+      .filter((s: any) => {
+        const header = (s.header || "").toLowerCase();
+        const body = (s.body_md || "").toLowerCase();
+        return header.includes(q) || body.includes(q);
+      })
+      .map((s: any) => s.id)
+      .filter((id: number) => typeof id === "number");
+
+    return new Set<number>(ids);
+  }, [doc?.sections, sectionSearch]);
+
+  const firstMatchingSectionId = useMemo<number | null>(() => {
+    for (const id of matchingSectionIds) return id;
+    return null;
+  }, [matchingSectionIds]);
+
+  useEffect(() => {
+    if (!firstMatchingSectionId) return;
+    const el = document.querySelector<HTMLElement>(
+      `[data-section-id="${firstMatchingSectionId}"]`
+    );
+    if (el) {
+      el.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+  }, [firstMatchingSectionId]);
 
   useEffect(() => {
     loadDoc();
@@ -690,17 +740,44 @@ export default function DocumentPage() {
                 onChange={(e) =>
                   setDoc((prev: any) => ({ ...prev, title: e.target.value }))
                 }
-                placeholder="Document Title"
+                placeholder="Document title"
+                autoFocus
+                maxLength={180}
+                onKeyDown={(e) => {
+                  // Avoid accidental submits / newlines
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                  }
+                }}
               />
             ) : (
               <h1 className="document-title">{doc.title}</h1>
             )}
-            {doc.status && (
-              <span
-                className={`document-status document-status--${doc.status}`}
+
+            {editMode && canEdit ? (
+              <select
+                className="document-status-select"
+                value={doc.status || "draft"}
+                onChange={(e) =>
+                  setDoc((prev: any) =>
+                    prev ? { ...prev, status: e.target.value } : prev
+                  )
+                }
               >
-                {doc.status}
-              </span>
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              doc.status && (
+                <span
+                  className={`document-status document-status--${doc.status}`}
+                >
+                  {STATUS_LABELS[doc.status] ?? doc.status}
+                </span>
+              )
             )}
           </div>
         </header>
@@ -1085,218 +1162,103 @@ export default function DocumentPage() {
                 </>
               )}
 
-              {editMode && canEdit && (
+              {/* ADD NEW LINK (inline form only when toggled on) */}
+              {editMode && canEdit && isAddingLink && (
                 <div className="doc-links-add-block">
-                  {!isAddingLink ? (
-                    <button
-                      className="ks-btn-primary doc-add-trigger-btn"
-                      onClick={() => setIsAddingLink(true)}
-                    >
-                      + Add Link
-                    </button>
-                  ) : (
-                    <div className="doc-add-form-wrapper">
-                      <h4>Add Link</h4>
-                      {linkError && (
-                        <p className="doc-error-text">{linkError}</p>
-                      )}
-                      <form
-                        onSubmit={handleCreateLink}
-                        className="doc-link-add-form"
-                      >
-                        <input
-                          type="text"
-                          placeholder="Title"
-                          value={newLinkTitle}
-                          onChange={(e) => setNewLinkTitle(e.target.value)}
-                        />
-                        <input
-                          type="url"
-                          placeholder="https://example.com"
-                          value={newLinkUrl}
-                          onChange={(e) => setNewLinkUrl(e.target.value)}
-                        />
+                  <div className="doc-add-form-wrapper">
+                    <form onSubmit={handleCreateLink}>
+                      <div className="doc-link-add-grid">
+                        <label className="doc-link-field">
+                          <span>Title</span>
+                          <input
+                            type="text"
+                            value={newLinkTitle}
+                            onChange={(e) => setNewLinkTitle(e.target.value)}
+                          />
+                        </label>
+                        <label className="doc-link-field">
+                          <span>URL</span>
+                          <input
+                            type="url"
+                            value={newLinkUrl}
+                            onChange={(e) => setNewLinkUrl(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                      <label className="doc-link-note-field">
+                        <span>Note (optional)</span>
                         <textarea
-                          placeholder="Optional note"
                           value={newLinkNote}
                           onChange={(e) => setNewLinkNote(e.target.value)}
                           rows={2}
                         />
-                        <div className="doc-inline-buttons">
-                          <button
-                            type="submit"
-                            className="ks-btn-primary"
-                            disabled={linkSaving}
-                          >
-                            {linkSaving ? "Saving..." : "Add link"}
-                          </button>
-                          <button
-                            type="button"
-                            className="ks-btn-secondary"
-                            onClick={() => setIsAddingLink(false)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  )}
+                      </label>
+                      {linkError && (
+                        <p className="doc-error-text doc-error-text-links">{linkError}</p>
+                      )}
+                      <div className="doc-inline-buttons">
+                        <button type="submit" className="ks-btn-primary">
+                          Add link
+                        </button>
+                        <button
+                          type="button"
+                          className="ks-btn-secondary"
+                          onClick={() => setIsAddingLink(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               )}
 
               {/* SECTIONS: headers/body on left, images on right */}
-              {doc.sections?.map((s: any, index: number) => (
-                <section className="doc-contents" key={s.id}>
-                  <div className="doc-left">
-                    {editMode && canEdit && editingSectionId === s.id ? (
-                      <form
-                        onSubmit={handleUpdateSection}
-                        className="doc-section-edit-form"
-                      >
-                        <input
-                          type="text"
-                          placeholder="Section header"
-                          value={editSectionHeader}
-                          onChange={(e) =>
-                            setEditSectionHeader(e.target.value)
-                          }
-                        />
-                        <textarea
-                          placeholder="Section body (markdown/plain)"
-                          value={editSectionBody}
-                          onChange={(e) =>
-                            setEditSectionBody(e.target.value)
-                          }
-                          rows={6}
-                        />
-                        <label className="doc-image-label">
-                          Image (optional)
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) =>
-                              setEditSectionImage(e.target.files?.[0] ?? null)
-                            }
-                          />
-                        </label>
-                        {sectionError && (
-                          <p className="doc-error-text">{sectionError}</p>
-                        )}
-                        <div className="doc-inline-buttons">
-                          <button
-                            type="submit"
-                            className="ks-btn-primary"
-                            disabled={sectionSaving}
-                          >
-                            {sectionSaving ? "Saving..." : "Save section"}
-                          </button>
-                          <button
-                            type="button"
-                            className="ks-btn-secondary"
-                            onClick={cancelEditSection}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="doc-section-header-row">
-                          {editMode && canEdit && (
-                            <div className="doc-section-reorder-controls">
-                              <button
-                                type="button"
-                                className="doc-reorder-btn"
-                                disabled={index === 0}
-                                onClick={() => handleMoveSection(index, "up")}
-                                title="Move up"
-                              >
-                                ▲
-                              </button>
-                              <button
-                                type="button"
-                                className="doc-reorder-btn"
-                                disabled={index === (doc.sections?.length || 0) - 1}
-                                onClick={() => handleMoveSection(index, "down")}
-                                title="Move down"
-                              >
-                                ▼
-                              </button>
-                            </div>
-                          )}
-                          <h3 className="doc-section-title">
-                            {s.header}
-                            {editMode && canEdit && (
-                              <button
-                                type="button"
-                                className="doc-inline-edit-btn"
-                                onClick={() => startEditSection(s)}
-                              >
-                                Edit
-                              </button>
-                            )}
-                          </h3>
-                        </div>
-                        <pre className="doc-section-pre">{s.body_md}</pre>
-                      </>
-                    )}
-                  </div>
-                  <div className="doc-right">
-                    {s.image ? (
-                      <div className="doc-section-image-wrapper">
-                        <img
-                          className="doc-sec-img"
-                          src={s.image}
-                          alt={s.header || "section image"}
-                          onClick={() =>
-                            setLightboxImage({
-                              src: s.image,
-                              alt: s.header || "section image",
-                            })
-                          }
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                </section>
-              ))}
+                <div className="doc-sections-toolbar">
+                  <h2 className="doc-sections-title">Sections</h2>
+                  <input
+                    type="text"
+                    className="doc-sections-search"
+                    placeholder="Search sections..."
+                    value={sectionSearch}
+                    onChange={(e) => setSectionSearch(e.target.value)}
+                  />
+                  {sectionSearch.trim() && (
+                    <span className="doc-sections-search-count">
+                      {matchingSectionIds.size} match
+                      {matchingSectionIds.size === 1 ? "" : "es"}
+                    </span>
+                  )}
+                </div>
 
-              {editMode && canEdit && (
-                <section className="doc-contents doc-add-section-block">
-                  <div className="doc-left">
-                    {!isAddingSection ? (
-                      <div style={{ textAlign: "center", padding: "20px 0" }}>
-                        <button
-                          className="ks-btn-primary doc-add-trigger-btn"
-                          onClick={() => setIsAddingSection(true)}
-                        >
-                          + Add Section
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="doc-add-form-wrapper">
-                        <h3>Add Section</h3>
-                        {sectionError && !editingSectionId && (
-                          <p className="doc-error-text">{sectionError}</p>
-                        )}
+                {doc.sections?.map((s: any, index: number) => (
+                  <section
+                    className={`doc-contents ${
+                      sectionSearch
+                        ? matchingSectionIds.has(s.id)
+                          ? "doc-section--search-hit"
+                          : "doc-section--search-dim"
+                        : ""
+                    }`}
+                    data-section-id={s.id}
+                    key={s.id}
+                  >
+                    <div className="doc-left">
+                      {editMode && canEdit && editingSectionId === s.id ? (
                         <form
-                          onSubmit={handleCreateSection}
-                          className="doc-section-add-form"
+                          onSubmit={handleUpdateSection}
+                          className="doc-section-edit-form"
                         >
                           <input
                             type="text"
                             placeholder="Section header"
-                            value={newSectionHeader}
-                            onChange={(e) =>
-                              setNewSectionHeader(e.target.value)
-                            }
+                            value={editSectionHeader}
+                            onChange={(e) => setEditSectionHeader(e.target.value)}
                           />
                           <textarea
                             placeholder="Section body (markdown/plain)"
-                            value={newSectionBody}
-                            onChange={(e) =>
-                              setNewSectionBody(e.target.value)
-                            }
+                            value={editSectionBody}
+                            onChange={(e) => setEditSectionBody(e.target.value)}
                             rows={6}
                           />
                           <label className="doc-image-label">
@@ -1305,29 +1267,140 @@ export default function DocumentPage() {
                               type="file"
                               accept="image/*"
                               onChange={(e) =>
-                                setNewSectionImage(e.target.files?.[0] ?? null)
+                                setEditSectionImage(e.target.files?.[0] ?? null)
                               }
                             />
                           </label>
+                          {sectionError && (
+                            <p className="doc-error-text">{sectionError}</p>
+                          )}
                           <div className="doc-inline-buttons">
                             <button
                               type="submit"
                               className="ks-btn-primary"
                               disabled={sectionSaving}
                             >
-                              {sectionSaving ? "Saving..." : "Add section"}
+                              {sectionSaving ? "Saving..." : "Save section"}
                             </button>
                             <button
                               type="button"
                               className="ks-btn-secondary"
-                              onClick={() => setIsAddingSection(false)}
+                              onClick={cancelEditSection}
                             >
                               Cancel
                             </button>
                           </div>
                         </form>
-                      </div>
-                    )}
+                      ) : (
+                        <>
+                          <div className="doc-section-header-row">
+                            {editMode && canEdit && (
+                              <div className="doc-section-reorder-controls">
+                                <button
+                                  type="button"
+                                  className="doc-reorder-btn"
+                                  disabled={index === 0}
+                                  onClick={() => handleMoveSection(index, "up")}
+                                  title="Move up"
+                                >
+                                  ▲
+                                </button>
+                                <button
+                                  type="button"
+                                  className="doc-reorder-btn"
+                                  disabled={
+                                    index === (doc.sections?.length || 0) - 1
+                                  }
+                                  onClick={() => handleMoveSection(index, "down")}
+                                  title="Move down"
+                                >
+                                  ▼
+                                </button>
+                              </div>
+                            )}
+                            <h3 className="doc-section-title">
+                              {s.header}
+                              {editMode && canEdit && (
+                                <button
+                                  type="button"
+                                  className="doc-inline-edit-btn"
+                                  onClick={() => startEditSection(s)}
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </h3>
+                          </div>
+                          <pre className="doc-section-pre">{s.body_md}</pre>
+                        </>
+                      )}
+                    </div>
+                    <div className="doc-right">
+                      {s.image ? (
+                        <div className="doc-section-image-wrapper">
+                          <img
+                            className="doc-sec-img"
+                            src={s.image}
+                            alt={s.header || "section image"}
+                            onClick={() =>
+                              setLightboxImage({
+                                src: s.image,
+                                alt: s.header || "section image",
+                              })
+                            }
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  </section>
+                ))}
+
+              {/* ADD NEW SECTION (inline form only when toggled on) */}
+              {editMode && canEdit && isAddingSection && (
+                <section className="doc-contents doc-add-section-block">
+                  <div className="doc-left">
+                    <div className="doc-add-form-wrapper">
+                      <form onSubmit={handleCreateSection} className="doc-section-edit-form">
+                        <input
+                          type="text"
+                          placeholder="Section header"
+                          value={newSectionHeader}
+                          onChange={(e) => setNewSectionHeader(e.target.value)}
+                        />
+                        <textarea
+                          placeholder="Section body (markdown/plain)"
+                          value={newSectionBody}
+                          onChange={(e) => setNewSectionBody(e.target.value)}
+                          rows={6}
+                        />
+                        <label className="doc-image-label">
+                          Image (optional)
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              setNewSectionImage(e.target.files?.[0] ?? null)
+                            }
+                          />
+                        </label>
+                        <div className="doc-inline-buttons">
+                          <button
+                            type="submit"
+                            className="ks-btn-primary"
+                            disabled={sectionSaving}
+                          >
+                            {sectionSaving ? "Saving…" : "Add section"}
+                          </button>
+                          <button
+                            type="button"
+                            className="ks-btn-secondary"
+                            onClick={() => setIsAddingSection(false)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
                   <div className="doc-right" />
                 </section>
@@ -1341,56 +1414,96 @@ export default function DocumentPage() {
 
         {/* FOOTER BAR ACROSS ALL 4 COLUMNS */}
         <footer className="document-footer document-grid-full">
-          <div className="document-footer-meta">
-            {editMode && canEdit && (hasDocUnsavedChanges || hasInlineDrafts) && (
-              <span className="doc-unsaved-pill">Unsaved changes</span>
-            )}
-          </div>
-          <div className="document-footer-actions">
-            {canEdit && (
-              <>
-                {editMode && (
+          <div className="document-footer-inner">
+            {/* LEFT: reserved area for unsaved pill (never collapses) */}
+            <div className="document-footer-meta">
+              <span
+                className={
+                  "doc-unsaved-pill" +
+                  (editMode && canEdit && (hasDocUnsavedChanges || hasInlineDrafts)
+                    ? " doc-unsaved-pill--visible"
+                    : " doc-unsaved-pill--hidden")
+                }
+              >
+                Unsaved changes
+              </span>
+            </div>
+
+            {/* CENTER: add section / add link */}
+            <div className="document-footer-center">
+              {editMode && canEdit && (
+                <>
                   <button
                     type="button"
-                    className="document-save-btn ks-btn-primary"
-                    onClick={handleSaveDocument}
-                    disabled={!hasDocUnsavedChanges || docSaving}
+                    className="document-footer-add-btn"
+                    onClick={() => {
+                      setIsAddingSection(true);
+                      setIsAddingLink(false);
+                    }}
                   >
-                    {docSaving ? "Saving…" : "Save document"}
+                    + Section
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="document-edit-toggle ks-btn-secondary"
-                  onClick={async () => {
-                    if (editMode && (hasDocUnsavedChanges || hasInlineDrafts)) {
-                      const ok = window.confirm(
-                        "You have unsaved changes to this document. Discard them?"
-                      );
-                      if (!ok) {
-                        return;
-                      }
-                      setInitialDocSnapshot(null);
-                      await loadDoc();
-                    }
+                  <button
+                    type="button"
+                    className="document-footer-add-btn"
+                    onClick={() => {
+                      setIsAddingLink(true);
+                      setIsAddingSection(false);
+                    }}
+                  >
+                    + Resource link
+                  </button>
+                </>
+              )}
+            </div>
 
-                    setEditMode((m: boolean) => !m);
-                    setEditingSectionId(null);
-                    setEditingLinkId(null);
-                    setSectionError(null);
-                    setLinkError(null);
-                    setEditSectionImage(null);
-                    setNewSectionImage(null);
-                    setActiveInfo(null);
-                    setLockedInfo(null);
-                    setIsAddingSection(false);
-                    setIsAddingLink(false);
-                  }}
-                >
-                  {editMode ? "Done editing" : "Edit document"}
-                </button>
-              </>
-            )}
+            {/* RIGHT: Save document / Done editing stay pinned right */}
+            <div className="document-footer-actions">
+              {canEdit && (
+                <>
+                  {editMode && (
+                    <button
+                      type="button"
+                      className="document-save-btn ks-btn-primary"
+                      onClick={handleSaveDocument}
+                      disabled={!hasDocUnsavedChanges || docSaving}
+                    >
+                      {docSaving ? "Saving…" : "Save document"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="document-edit-toggle ks-btn-secondary"
+                    onClick={async () => {
+                      if (editMode && (hasDocUnsavedChanges || hasInlineDrafts)) {
+                        const ok = window.confirm(
+                          "You have unsaved changes to this document. Discard them?"
+                        );
+                        if (!ok) {
+                          return;
+                        }
+                        setInitialDocSnapshot(null);
+                        await loadDoc();
+                      }
+
+                      setEditMode((m: boolean) => !m);
+                      setEditingSectionId(null);
+                      setEditingLinkId(null);
+                      setSectionError(null);
+                      setLinkError(null);
+                      setEditSectionImage(null);
+                      setNewSectionImage(null);
+                      setActiveInfo(null);
+                      setLockedInfo(null);
+                      setIsAddingSection(false);
+                      setIsAddingLink(false);
+                    }}
+                  >
+                    {editMode ? "Done editing" : "Edit document"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </footer>
       </div>

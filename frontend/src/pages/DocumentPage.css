@@ -33,12 +33,18 @@
 }
 
 .document-header-main {
-  display: inline-flex;
+  display: flex;              /* was: inline-flex */
   flex-direction: column;
   align-items: center;
   gap: 6px;
   padding: 4px 16px 8px;
+
+  /* let this block control the title width */
+  width: 100%;
+  max-width: 1500px;           /* adjust as you like */
+  margin: 0 auto;             /* center within the doc paper */
 }
+
 
 .document-title {
   margin: 0;
@@ -67,6 +73,71 @@
     0 3px 8px rgba(15, 23, 42, 0.06);
 }
 
+.document-title-input {
+  margin: 0;
+  font-size: clamp(22px, 3.4vw, 30px);
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: center;
+
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 6px 16px;
+
+  width: 100%;               /* fill the 900px container */
+  max-width: 100%;           /* don’t re-shrink it */
+
+  background: transparent;
+  color: var(--content-text);
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+
+
+.document-title-input::placeholder {
+  color: var(--muted);
+}
+
+.document-title-input:hover {
+  border-color: var(--border-soft);
+  background-color: color-mix(in oklab, var(--content-bg) 90%, #ffffff);
+}
+
+.document-title-input:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.45);
+  background-color: color-mix(in oklab, var(--content-bg) 85%, #ffffff);
+}
+
+
+.document-status-select {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--surface, #f5f5f8);
+  color: var(--muted, #555);
+  border: 1px solid var(--sidebar-edge, #d6e4ff);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 3px 8px rgba(15, 23, 42, 0.06);
+  outline: none;
+}
+
+.document-status-select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+
 /* Buttons reused in footer (base shape) */
 
 .document-save-btn,
@@ -93,6 +164,55 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Sections toolbar + search */
+
+.doc-sections-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.doc-sections-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ks-text-strong);
+}
+
+.doc-sections-search {
+  flex: 1;
+  max-width: 280px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--ks-border-subtle);
+  background: var(--ks-surface-elevated);
+  color: var(--ks-text);
+}
+
+.doc-sections-search:focus {
+  outline: none;
+  border-color: var(--ks-accent);
+  box-shadow: 0 0 0 1px var(--ks-accent-soft, var(--ks-accent));
+}
+
+.doc-sections-search-count {
+  font-size: 0.8rem;
+  color: var(--ks-text-subtle);
+}
+
+/* Search highlighting */
+
+.doc-contents.doc-section--search-hit {
+  border-color: var(--ks-accent);
+  box-shadow: 0 0 0 1px var(--ks-accent-soft, var(--ks-accent));
+}
+
+.doc-contents.doc-section--search-dim {
+  opacity: 0.55;
 }
 
 /* Tags / sidebar panels */
@@ -143,6 +263,7 @@
 }
 
 /* “Hide” / small notes stay muted but theme-driven */
+
 .doc-sidebar-toggle-indicator,
 .doc-visibility-note {
   color: var(--muted);
@@ -298,7 +419,6 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px 16px;
-  /* row / column spacing */
 }
 
 .doc-links li {
@@ -386,7 +506,6 @@
   gap: 32px;
   margin: 0 auto 28px;
   padding: 14px 0 18px;
-  /* no divider between sections for now */
   border-bottom: none;
 }
 
@@ -417,11 +536,13 @@
 }
 
 /* Wrapper for section images */
+
 .doc-section-image-wrapper {
   margin: 8px 0;
 }
 
 /* Section images */
+
 .doc-sec-img {
   max-width: 100%;
   max-height: 50%;
@@ -601,14 +722,9 @@
 
 .document-footer {
   position: fixed;
-  left: 280px;
-  /* matches sidebar width */
+  left: 280px; /* matches sidebar width */
   right: 0;
   bottom: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 
   padding: 10px 32px;
   border-top: 1px solid var(--sidebar-edge);
@@ -617,15 +733,33 @@
   background-color: var(--sidebar-bg);
   color: var(--sidebar-text);
 
-  /* Remove blur so the color doesn't shift against content */
   font-size: 0.9rem;
   z-index: 40;
-  height: 63.5px;
+  height: 61px;
+}
+
+/* Inner grid keeps center column truly centered, regardless of left/right width */
+.document-footer-inner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 16px;
 }
 
 .document-footer-meta {
   display: flex;
   align-items: center;
+  gap: 8px;
+  justify-self: flex-start;
+}
+
+/* center cluster: add section / add link */
+.document-footer-center {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -633,13 +767,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-self: flex-end;
 }
 
 /* Buttons in the footer:
    use sidebar control palette (search / PathTree style) */
 
 .document-footer-actions .document-save-btn,
-.document-footer-actions .document-edit-toggle {
+.document-footer-actions .document-edit-toggle,
+.document-footer-center .document-footer-add-btn {
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 0.9rem;
@@ -658,7 +794,8 @@
 }
 
 .document-footer-actions .document-save-btn:hover,
-.document-footer-actions .document-edit-toggle:hover {
+.document-footer-actions .document-edit-toggle:hover,
+.document-footer-center .document-footer-add-btn:hover {
   background: color-mix(in oklab, var(--sidebar-control-bg) 85%, white);
   border-color: var(--brand);
   box-shadow: 0 4px 10px rgba(58, 123, 250, 0.25);
@@ -688,6 +825,15 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+/* Unsaved pill: keep its space even when not visible */
+.doc-unsaved-pill--hidden {
+  visibility: hidden;
+}
+
+.doc-unsaved-pill--visible {
+  visibility: visible;
 }
 
 /* --- Responsive tweaks --- */
