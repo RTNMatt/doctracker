@@ -1,6 +1,6 @@
 # docs/views.py
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -252,7 +252,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(doc, context={"request": request})
         return Response(serializer.data)
 
-
     @action(detail=True, methods=["post"])
     def set_collections(self, request, pk=None):
         """
@@ -406,6 +405,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         qs = Collection.objects.filter(org=org).prefetch_related(
             "documents",
             "subcollections",
+            "linked_tags",  # tags where Tag.link_collection = this collection
         )
 
         created_by = self.request.query_params.get("created_by")

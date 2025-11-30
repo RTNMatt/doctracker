@@ -348,9 +348,22 @@ class RenderedRequirementsSerializer(serializers.ModelSerializer):
 # Collections
 # -----------
 class CollectionSerializer(OrgScopedSerializerMixin, serializers.ModelSerializer):
+    # Expose tags that "belong" to this collection via Tag.link_collection
+    # (reverse related_name = "linked_tags")
+    tags = TagSerializer(many=True, read_only=True, source="linked_tags")
+
     class Meta:
         model = Collection
-        fields = ["id", "name", "slug", "description", "documents", "subcollections", "order"]
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "description",
+            "documents",
+            "subcollections",
+            "order",
+            "tags",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

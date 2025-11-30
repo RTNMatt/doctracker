@@ -22,6 +22,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import NewCollectionPage from "./pages/NewCollectionPage";
 import CreateContentPage from "./pages/CreateContentPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import DocumentsList from "./pages/DocumentsList";
 
 const router = createBrowserRouter([
   {
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
       { path: "search", element: <SearchResultsPage /> },
 
       { path: "create", element: <CreateContentPage /> },
+      { path: "documents", element: <DocumentsList /> },
       { path: "documents/new", element: <NewDocumentPage /> },
       { path: "documents/:id", element: <DocumentPage /> },
 

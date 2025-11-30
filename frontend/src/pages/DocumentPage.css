@@ -465,6 +465,47 @@
   outline-offset: 2px;
 }
 
+.doc-inline-delete-btn {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  padding: 4px 10px;
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+  transition:
+    background 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease,
+    border-color 120ms ease;
+}
+
+/* small trash icon via pseudo, so we don't rely only on color */
+.doc-inline-delete-btn::before {
+  content: "🗑";
+  font-size: 0.8rem;
+}
+
+/* subtle "danger" feel on hover, but still using themeable base */
+.doc-inline-delete-btn:hover {
+  background: color-mix(in oklab, var(--sidebar-control-bg) 85%, white);
+  border-color: rgba(239, 68, 68, 0.7); /* red accent, but not for legibility */
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
+  transform: translateY(-0.5px);
+}
+
+.doc-inline-delete-btn:focus-visible {
+  outline: 2px solid rgba(239, 68, 68, 0.9);
+  outline-offset: 2px;
+}
+
+
+
 .doc-inline-buttons {
   display: flex;
   gap: 8px;

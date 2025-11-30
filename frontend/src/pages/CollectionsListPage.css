@@ -1,0 +1,213 @@
+.collections-list-page {
+  color: var(--content-text);
+  background: var(--content-bg);
+}
+
+/* Header tweaks specific to the collections list */
+.collections-list-header {
+  margin-bottom: 16px;
+}
+
+/* Error text on this page */
+.collections-error {
+  color: red;
+}
+
+/* Shared width + padding for filters and layout */
+.collections-list-page .collections-filters,
+.collections-list-page .collections-layout {
+  max-width: 1100px;
+  padding: 0 16px;
+  margin: 0 auto;
+}
+
+/* Top filter row: name search + sort */
+.collections-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.collections-title-search {
+  min-width: 0;
+  flex: 0 1 320px;
+  max-width: 320px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+}
+
+.collections-title-search:focus-visible {
+  outline: none;
+  border-color: var(--brand, #3a7bfa);
+  box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
+}
+
+.collections-sort-select {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+}
+
+/* Main layout: tag column on the left, collections on the right */
+.collections-layout {
+  display: flex;
+  gap: 16px;
+}
+
+/* Tag column: same starting point + width as title search */
+.collections-tag-column {
+  flex: 0 0 320px;
+  max-width: 320px;
+}
+
+.collections-main-column {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Tag filter block */
+.collections-tag-filter-label {
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: var(--muted, #6b7280);
+}
+
+.collections-tag-search {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  margin-bottom: 6px;
+}
+
+.collections-tag-search:focus-visible {
+  outline: none;
+  border-color: var(--brand, #3a7bfa);
+  box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
+}
+
+/* Clear tags button – always reserves space */
+.collections-tag-clear-btn {
+  margin-bottom: 8px;
+}
+
+.collections-tag-clear-btn--hidden {
+  visibility: hidden;
+}
+
+/* Scroll containers: hover to scroll, scrollbar hidden */
+.collections-tag-scroll,
+.collections-card-scroll {
+  max-height: calc(100vh - 260px);
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+}
+
+.collections-tag-scroll:hover,
+.collections-card-scroll:hover {
+  overflow-y: auto;
+}
+
+.collections-tag-scroll::-webkit-scrollbar,
+.collections-card-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Tag chips in filter column */
+.collections-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-right: 4px; /* small room for scrollbar */
+  align-items: flex-start;
+}
+
+.collections-tag-chip-filter {
+  width: auto;
+  justify-content: flex-start;
+}
+
+/* Faded vs selected state */
+.collections-tag-chip--unselected {
+  opacity: 0.35;
+}
+
+.collections-tag-chip--selected {
+  opacity: 1;
+}
+
+/* Empty tag search state */
+.collections-tag-filter-empty {
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+}
+
+/* Empty state for collections */
+.collections-empty {
+  padding: 0 16px;
+}
+
+/* Collections list grid – reuse dept-card look */
+.collections-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding-right: 8px; /* small room for scrollbar */
+  margin: 8px 0 0;
+}
+
+.collections-card {
+  cursor: pointer;
+}
+
+.collections-doc-count {
+  font-size: 0.8rem;
+  color: var(--muted, #6b7280);
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .collections-list-page .collections-filters,
+  .collections-list-page .collections-layout {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 800px) {
+  .collections-layout {
+    flex-direction: column;
+  }
+
+  .collections-tag-column {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  .collections-card-scroll,
+  .collections-tag-scroll {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 700px) {
+  .collections-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .collections-title-search {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+}

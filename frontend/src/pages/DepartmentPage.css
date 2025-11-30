@@ -5,11 +5,28 @@
   height: 100%;
   color: var(--content-text);
   background: var(--content-bg);
+
+  /* match overall feel to profile/doc pages */
+  min-height: calc(100vh - 80px); /* adjust for navbar if applicable */
+  gap: 16px;
+
+  /* horizontal padding that scales a bit with viewport, but keeps full-width feel */
+  padding: 0 clamp(16px, 4vw, 64px) 24px;
+
+  max-width: 2000px;
+  margin: 0 auto;
 }
 
 .department-header {
   text-align: center;
   padding: 16px 0 8px;
+}
+
+/* when used inside the main column */
+.department-header--main {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 4px;
 }
 
 .department-title {
@@ -420,6 +437,8 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+
 
 /* Responsive */
 

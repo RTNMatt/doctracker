@@ -1,0 +1,218 @@
+.documents-list-page {
+  color: var(--content-text);
+  background: var(--content-bg);
+}
+
+/* Header tweaks specific to the documents list */
+.documents-list-header {
+  margin-bottom: 16px;
+}
+
+/* Error text on this page */
+.documents-error {
+  color: red;
+}
+
+/* Shared width + padding for filters and layout */
+.documents-list-page .docs-filters,
+.documents-list-page .docs-layout {
+  max-width: 2000px;
+  padding: 0 16px;
+  margin: 0 auto;
+}
+
+/* Top filter row: title search + status */
+.docs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.docs-title-search {
+  min-width: 0;
+  flex: 0 1 320px;
+  max-width: 320px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+}
+
+.docs-title-search:focus-visible {
+  outline: none;
+  border-color: var(--brand, #3a7bfa);
+  box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
+}
+
+.docs-status-select {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+}
+
+.docs-sort-select {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+}
+
+/* Main layout: tag column on the left, docs on the right */
+.docs-layout {
+  display: flex;
+  gap: 16px;
+}
+
+/* Tag column: same starting point + width as title search */
+.docs-tag-column {
+  flex: 0 0 320px;
+  max-width: 320px;
+}
+
+.docs-main-column {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Tag filter block */
+.docs-tag-filter-label {
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: var(--muted, #6b7280);
+}
+
+.docs-tag-search {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft, #d0d7e2);
+  background: var(--sidebar-control-bg);
+  color: var(--sidebar-control-text);
+  margin-bottom: 6px;
+}
+
+.docs-tag-search:focus-visible {
+  outline: none;
+  border-color: var(--brand, #3a7bfa);
+  box-shadow: 0 0 0 1px rgba(58, 123, 250, 0.3);
+}
+
+/* Clear tags button – always reserves space */
+.docs-tag-clear-btn {
+  margin-bottom: 8px;
+}
+
+.docs-tag-clear-btn--hidden {
+  visibility: hidden;
+}
+
+/* Scroll containers: hover to scroll, stop at bottom, scrollbar hidden */
+.docs-tag-scroll,
+.docs-card-scroll {
+  max-height: calc(100vh - 260px);
+  overflow-y: hidden;
+
+  /* Hide scrollbars across browsers */
+  scrollbar-width: none; /* Firefox */
+}
+
+.docs-tag-scroll:hover,
+.docs-card-scroll:hover {
+  overflow-y: auto;
+}
+
+.docs-tag-scroll::-webkit-scrollbar,
+.docs-card-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Tag chips in filter column */
+.docs-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-right: 4px; /* small room for scrollbar */
+  align-items: flex-start;
+}
+
+.docs-tag-chip-filter {
+  width: auto;
+  justify-content: flex-start;
+}
+
+/* Faded vs selected state */
+.docs-tag-chip--unselected {
+  opacity: 0.35;
+}
+
+.docs-tag-chip--selected {
+  opacity: 1;
+}
+
+/* Empty tag search state */
+.docs-tag-filter-empty {
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+}
+
+/* Empty state for docs */
+.docs-empty {
+  padding: 0 16px;
+}
+
+/* Documents list grid – reuse dept-card look */
+.docs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding-right: 8px; /* small room for scrollbar */
+  margin: 8px 0 0;
+}
+
+.docs-card {
+  cursor: pointer;
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .documents-list-page .docs-filters,
+  .documents-list-page .docs-layout {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 800px) {
+  .docs-layout {
+    flex-direction: column;
+  }
+
+  .docs-tag-column {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  .docs-card-scroll,
+  .docs-tag-scroll {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 700px) {
+  .docs-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .docs-title-search {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+}

@@ -67,6 +67,7 @@ export default function DepartmentPage() {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [addUsername, setAddUsername] = useState("");
   const [addSaving, setAddSaving] = useState(false);
+  const [isTeamOpen, setIsTeamOpen] = useState(true);
 
   // scrollers
   const collectionsScrollerRef = useRef<HTMLDivElement | null>(null);
@@ -421,15 +422,14 @@ export default function DepartmentPage() {
   }
 
   return (
-    <div className="department-page">
-      <header className="department-header">
-        <h1 className="department-title">{dept.name}</h1>
-      </header>
-
+  <div className="department-page">
       <div className="department-layout">
         {/* LEFT / MAIN COLUMN */}
         <main className="department-main">
-          {/* Description at top-left, title centered above */}
+          <header className="department-header department-header--main">
+            <h1 className="department-title">{dept.name}</h1>
+          </header>
+
           <section className="department-description-card">
             <div className="department-description-header-row">
               {canManageDept && !isEditingDescription && (

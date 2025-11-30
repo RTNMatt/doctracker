@@ -536,48 +536,50 @@ export default function DocumentPage() {
   };
 
   // ----- SECTION REORDERING -----
-  const handleMoveSection = async (index: number, direction: "up" | "down") => {
+  const handleMoveSection = (index: number, direction: "up" | "down") => {
+  if (!doc?.sections) return;
+
+  const sections = [...doc.sections];
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+  if (targetIndex < 0 || targetIndex >= sections.length) return;
+
+  // Swap locally; treat as an unsaved change
+  const temp = sections[index];
+  sections[index] = sections[targetIndex];
+  sections[targetIndex] = temp;
+
+  setDoc((prev: any) => ({ ...prev, sections }));
+};
+
+  // ----- SECTION DELETION -----
+  const handleDeleteSection = (sectionId: number) => {
     if (!doc?.sections) return;
 
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= doc.sections.length) return;
+    const confirmDelete = window.confirm(
+      "Delete this section? It will be removed when you save the document."
+    );
+    if (!confirmDelete) return;
 
-    const previousSections = doc.sections;
-    const sections = [...doc.sections];
+    // Remove from local doc state
+    setDoc((prev: any) => {
+      if (!prev?.sections) return prev;
+      return {
+        ...prev,
+        sections: prev.sections.filter((s: any) => s.id !== sectionId),
+      };
+    });
 
-    const temp = sections[index];
-    sections[index] = sections[targetIndex];
-    sections[targetIndex] = temp;
-
-    // Optimistic local update
-    setDoc((prev: any) => ({ ...prev, sections }));
-
-    // No persisted document ID yet – nothing to sync
-    if (!doc.id) return;
-
-    // Only send real, persisted sections to the backend (ignore temp negative IDs)
-    const persistedIds = sections
-      .map((s) => s.id)
-      .filter((id: number) => typeof id === "number" && id > 0);
-
-    if (!persistedIds.length) return;
-
-    try {
-      // Persist order + create a version snapshot
-      const res = await reorderDocumentSections(doc.id, persistedIds);
-
-      // Use server response as new clean baseline (ordering is now saved)
-      const fresh = res.data ?? res;
-      setDoc(fresh);
-      setInitialDocSnapshot(fresh);
-      setDocError(null);
-    } catch (e: any) {
-      // Roll back UI and show error
-      setDoc((prev: any) => ({ ...prev, sections: previousSections }));
-      setDocError(
-        e?.message ??
-          "Failed to save section order. The previous order has been restored."
+    // Track real sections for deletion on save; ignore temp (negative) IDs
+    if (sectionId > 0) {
+      setDeletedSectionIds((prev) =>
+        prev.includes(sectionId) ? prev : [...prev, sectionId]
       );
+    }
+
+    // If we were editing this section, reset editing state
+    if (editingSectionId === sectionId) {
+      cancelEditSection();
     }
   };
 
@@ -1308,9 +1310,7 @@ export default function DocumentPage() {
                                 <button
                                   type="button"
                                   className="doc-reorder-btn"
-                                  disabled={
-                                    index === (doc.sections?.length || 0) - 1
-                                  }
+                                  disabled={index === (doc.sections?.length || 0) - 1}
                                   onClick={() => handleMoveSection(index, "down")}
                                   title="Move down"
                                 >
@@ -1321,13 +1321,22 @@ export default function DocumentPage() {
                             <h3 className="doc-section-title">
                               {s.header}
                               {editMode && canEdit && (
-                                <button
-                                  type="button"
-                                  className="doc-inline-edit-btn"
-                                  onClick={() => startEditSection(s)}
-                                >
-                                  Edit
-                                </button>
+                                <>
+                                  <button
+                                    type="button"
+                                    className="doc-inline-edit-btn"
+                                    onClick={() => startEditSection(s)}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="doc-inline-delete-btn"
+                                    onClick={() => handleDeleteSection(s.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </>
                               )}
                             </h3>
                           </div>

@@ -100,6 +100,7 @@ export default function Sidebar() {
     { to: "/", label: "Home", exact: true },
     { to: "/departments", label: "Departments" },
     { to: "/collections", label: "Collections" },
+    { to: "/documents", label: "Documents" },
     { to: "/create", label: "Create content" },
   ];
 
@@ -111,6 +112,8 @@ export default function Sidebar() {
       resetTo({ kind: "index", name: "Departments", url: "/departments" });
     } else if (to === "/collections") {
       resetTo({ kind: "index", name: "Collections", url: "/collections" });
+    } else if (to === "/documents") {
+      resetTo({ kind: "index", name: "Documents", url: "/documents" });
     } else if (to === "/create") {
       resetTo({ kind: "index", name: "Create content", url: "/create" });
     }
